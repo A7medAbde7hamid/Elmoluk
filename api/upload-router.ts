@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { writeFile, mkdir } from "fs/promises";
 import { join } from "path";
-import { createRouter, authedQuery } from "./middleware";
+import { createRouter, authedQuery } from "./middleware.js";
 import { TRPCError } from "@trpc/server";
 
 const UPLOAD_DIR = join(process.cwd(), "public", "uploads");

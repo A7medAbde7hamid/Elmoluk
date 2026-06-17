@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { eq, desc, and, or, gte, lte, sql } from "drizzle-orm";
-import { createRouter, publicQuery, authedQuery, adminQuery } from "./middleware";
-import { getDb } from "./queries/connection";
+import { createRouter, publicQuery, authedQuery, adminQuery } from "./middleware.js";
+import { getDb } from "./queries/connection.js";
 import { bookings, barbers, services, packages, users, barberSchedules } from "@db/schema";
 
 export const bookingRouter = createRouter({
