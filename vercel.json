@@ -1,8 +1,9 @@
 {
-  "buildCommand": "vite build",
+  "buildCommand": "vite build && esbuild api/boot.ts --platform=node --bundle --format=esm --outfile=api/index.js --banner:js=\"import { createRequire } from 'module';const require = createRequire(import.meta.url);\"",
   "outputDirectory": "dist/public",
   "installCommand": "npm install",
   "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/index" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
