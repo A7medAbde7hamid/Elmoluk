@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Calendar } from "@/components/ui/calendar";
 import { Clock, User, MapPin, Check } from "lucide-react";
 import { toast } from "sonner";
+import { PaymentMethodSelector } from "@/components/PaymentMethodSelector";
 
 export default function Booking() {
   const navigate = useNavigate();
@@ -26,6 +27,8 @@ export default function Booking() {
   const [notes, setNotes] = useState("");
   const [isHomeService, setIsHomeService] = useState(false);
   const [homeAddress, setHomeAddress] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState<"cash" | "card" | "vodafone_cash" | "wallet">("cash");
+  const [receiptImage, setReceiptImage] = useState<string | null>(null);
 
   const { data: services } = trpc.service.list.useQuery({ isActive: true });
   const { data: barbers } = trpc.barber.list.useQuery({ isActive: true });
@@ -47,26 +50,69 @@ export default function Booking() {
     },
   });
 
+  const uploadMutation = trpc.upload.receipt.useMutation({
+    onSuccess: (data) => {
+      setReceiptImage(data.url);
+      toast.success("تم رفع الإيصال بنجاح");
+    },
+    onError: (error) => {
+      toast.error(error.message);
+    },
+  });
+
+  const createPayment = trpc.payment.create.useMutation({
+    onError: (error) => {
+      toast.error(error.message);
+    },
+  });
+
   const selectedServiceData = services?.find((s) => s.id === selectedService);
   const selectedBarberData = barbers?.find((b) => b.id === selectedBarber);
+
+  const handleReceiptUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const base64 = reader.result as string;
+      uploadMutation.mutate({ fileName: file.name, base64 });
+    };
+    reader.readAsDataURL(file);
+  };
 
   const handleSubmit = () => {
     if (!selectedService || !selectedBarber || !selectedDate || !selectedTime) return;
     
-    createBooking.mutate({
-      barberId: selectedBarber,
-      serviceId: selectedService,
-      bookingDate: selectedDate.toISOString().split("T")[0],
-      bookingTime: selectedTime,
-      duration: selectedServiceData?.duration || 30,
-      totalAmount: String(selectedServiceData?.price ?? "0"),
-      notes,
-      isHomeService,
-      homeAddress: isHomeService ? homeAddress : undefined,
-      customerName: customerName || undefined,
-      customerPhone: customerPhone || undefined,
-      customerEmail: customerEmail || undefined,
-    });
+    createBooking.mutate(
+      {
+        barberId: selectedBarber,
+        serviceId: selectedService,
+        bookingDate: selectedDate.toISOString().split("T")[0],
+        bookingTime: selectedTime,
+        duration: selectedServiceData?.duration || 30,
+        totalAmount: String(selectedServiceData?.price ?? "0"),
+        notes,
+        isHomeService,
+        homeAddress: isHomeService ? homeAddress : undefined,
+        customerName: customerName || undefined,
+        customerPhone: customerPhone || undefined,
+        customerEmail: customerEmail || undefined,
+      },
+      {
+        onSuccess: (bookingResult) => {
+          createPayment.mutate({
+            bookingId: bookingResult.id,
+            amount: String(selectedServiceData?.price ?? "0"),
+            paymentMethod,
+          });
+          toast.success("تم الحجز بنجاح! تم إرسال كود التحقق");
+          navigate("/profile");
+        },
+        onError: (error) => {
+          toast.error(error.message);
+        },
+      }
+    );
   };
 
   const steps = [
@@ -426,6 +472,14 @@ export default function Booking() {
                   />
                 </div>
               </div>
+
+              <PaymentMethodSelector
+                value={paymentMethod}
+                onChange={setPaymentMethod}
+                totalAmount={Number(selectedServiceData?.price ?? 0)}
+                receiptImage={receiptImage}
+                onReceiptUpload={handleReceiptUpload}
+              />
 
               <div className="flex justify-between">
                 <Button

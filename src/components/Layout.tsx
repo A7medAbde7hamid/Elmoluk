@@ -16,6 +16,8 @@ import {
   Tag,
   MessageCircle,
 } from "lucide-react";
+import { WhatsAppButton } from "./WhatsAppButton";
+import { NotificationBell } from "./NotificationBell";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -48,6 +50,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
     { href: "/shop", label: "المتجر", icon: ShoppingBag },
     { href: "/offers", label: "العروض", icon: Tag },
     { href: "/chat", label: "المساعدة", icon: MessageCircle },
+    { href: "/barbers", label: "الحلاقين", icon: Scissors },
+    { href: "/contact", label: "اتصل بنا", icon: MessageCircle },
   ];
 
   return (
@@ -117,6 +121,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
             {/* Auth Buttons */}
             <div className="hidden lg:flex items-center gap-3">
               {isAuthenticated ? (
+                <>
+                <NotificationBell />
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button
@@ -174,6 +180,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
+                </>
               ) : (
                 <Link to="/login">
                   <Button className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-black font-bold px-6">
@@ -307,10 +314,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <div className="space-y-4">
               <h3 className="text-lg font-bold text-amber-400">تواصل معنا</h3>
               <div className="space-y-2 text-gray-400 text-sm">
-                <p>العنوان: شارع الملك فهد، الرياض</p>
-                <p>الهاتف: +966 50 000 0000</p>
+                <p>العنوان: شارع الملك فهد، القاهرة، مصر</p>
+                <p>الهاتف: +20 1068824098</p>
+                <p>وتساب: +20 1068824098</p>
                 <p>البريد: info@salonelmalok.com</p>
-                <p>ساعات العمل: 10 ص - 10 م</p>
+                <p>ساعات العمل: السبت - الخميس 10 ص - 10 م</p>
+                <p>الجمعة: 4 م - 8 م</p>
               </div>
             </div>
           </div>
@@ -320,6 +329,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </div>
         </div>
       </footer>
+      <WhatsAppButton />
     </div>
   );
 }
