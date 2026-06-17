@@ -3,12 +3,6 @@
   "outputDirectory": "dist/public",
   "installCommand": "npm install",
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "src/server" },
     { "source": "/(.*)", "destination": "/index.html" }
-  ],
-  "functions": {
-    "src/server.ts": {
-      "maxDuration": 30
-    }
-  }
+  ]
 }
