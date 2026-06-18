@@ -8,7 +8,7 @@ import { createRouter, publicQuery, authedQuery, adminQuery } from "./middleware
 import { getDb } from "./queries/connection.js";
 import { users, barbers } from "@db/schema";
 import { env } from "./lib/env.js";
-import { signSessionToken } from "./kimi/session.js";
+import { signSessionToken } from "./lib/auth.js";
 import { findUserByEmail } from "./queries/users.js";
 import { TRPCError } from "@trpc/server";
 

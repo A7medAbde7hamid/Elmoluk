@@ -7,20 +7,6 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 
-function getOAuthUrl() {
-  const kimiAuthUrl = import.meta.env.VITE_KIMI_AUTH_URL;
-  const appID = import.meta.env.VITE_APP_ID;
-  const redirectUri = `${window.location.origin}/api/oauth/callback`;
-  const state = btoa(redirectUri);
-  const url = new URL(`${kimiAuthUrl}/api/oauth/authorize`);
-  url.searchParams.set("client_id", appID);
-  url.searchParams.set("redirect_uri", redirectUri);
-  url.searchParams.set("response_type", "code");
-  url.searchParams.set("scope", "profile");
-  url.searchParams.set("state", state);
-  return url.toString();
-}
-
 export default function Login() {
   const navigate = useNavigate();
   const utils = trpc.useUtils();
@@ -71,14 +57,7 @@ export default function Login() {
                 onClick={() => loginMutation.mutate(loginForm)}>
                 {loginMutation.isPending ? "جاري..." : "تسجيل الدخول"}
               </Button>
-              <div className="relative my-4">
-                <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-zinc-700" /></div>
-                <div className="relative flex justify-center text-xs"><span className="bg-zinc-900 px-2 text-gray-500">أو</span></div>
-              </div>
-              <Button variant="outline" className="w-full border-amber-500/30 text-amber-400 hover:bg-amber-500/10"
-                onClick={() => window.location.href = getOAuthUrl()}>
-                تسجيل عبر Kimi
-              </Button>
+
             </TabsContent>
 
             <TabsContent value="register" className="space-y-4">
