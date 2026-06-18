@@ -2,7 +2,6 @@
   "buildCommand": "vite build && esbuild api/app.ts --platform=node --bundle --format=esm --outfile=api/index.js --banner:js=\"import { createRequire } from 'module';const require = createRequire(import.meta.url);\"",
   "outputDirectory": "dist/public",
   "installCommand": "npm install",
-  "typescript": false,
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/index" },
     { "source": "/(.*)", "destination": "/index.html" }
