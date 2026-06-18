@@ -12,17 +12,20 @@
     }
   ],
   "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "esModuleInterop": true,
+    "noEmit": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": [
-        "./src/*"
-      ],
-      "@contracts/*": [
-        "./contracts/*"
-      ],
-      "@db/*": [
-        "./db/*"
-      ]
+      "@/*": ["./src/*"],
+      "@contracts/*": ["./contracts/*"],
+      "@db/*": ["./db/*"]
     }
   }
 }

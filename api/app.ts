@@ -5,7 +5,7 @@ import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
 import { appRouter } from "./router.js";
 import { createContext } from "./context.js";
 import { Paths } from "@contracts/constants";
-import { createOAuthCallbackHandler } from "./kimi/auth";
+import { createOAuthCallbackHandler } from "./kimi/auth.js";
 
 const app = new Hono<{ Bindings: HttpBindings }>();
 
