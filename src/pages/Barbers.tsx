@@ -2,8 +2,7 @@ import { trpc } from "@/providers/trpc";
 import { Layout } from "@/components/Layout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Star, Scissors, Phone, MapPin, ChevronLeft, ChevronRight } from "lucide-react";
+import { Star, Phone, ChevronRight } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router";
 
