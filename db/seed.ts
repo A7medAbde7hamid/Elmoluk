@@ -1,5 +1,5 @@
 import { eq } from "drizzle-orm";
-import { getDb } from "../api/queries/connection";
+import { getDb } from "../src/server/queries/connection";
 import * as schema from "./schema";
 import bcrypt from "bcryptjs";
 

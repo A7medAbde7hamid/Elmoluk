@@ -17,7 +17,10 @@ function createPool() {
   const parsed = new URL(env.databaseUrl);
   if (parsed.searchParams.has("ssl")) {
     try {
-      opts.ssl = { ...opts.ssl, ...JSON.parse(parsed.searchParams.get("ssl")!) };
+      const sslFromUrl = JSON.parse(parsed.searchParams.get("ssl")!);
+      opts.ssl = typeof opts.ssl === "object" && opts.ssl !== null
+        ? { ...opts.ssl, ...sslFromUrl }
+        : sslFromUrl;
     } catch { /* ignore invalid JSON */ }
   }
 
