@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { TRPCError } from "@trpc/server";
 import { eq, desc, and, or, gte, lte, sql } from "drizzle-orm";
 import { createRouter, publicQuery, authedQuery, adminQuery } from "./middleware.js";
 import { getDb } from "./queries/connection.js";
@@ -94,16 +95,19 @@ export const bookingRouter = createRouter({
       return enriched;
     }),
 
-  // Get single booking
-  byId: publicQuery
+  // Get single booking (owner or admin)
+  byId: authedQuery
     .input(z.object({ id: z.number() }))
-    .query(async ({ input }) => {
+    .query(async ({ ctx, input }) => {
       const db = getDb();
       const booking = await db.query.bookings.findFirst({
         where: eq(bookings.id, input.id),
       });
       
-      if (!booking) throw new Error("Booking not found");
+      if (!booking) throw new TRPCError({ code: "NOT_FOUND", message: "الحجز غير موجود" });
+      if (booking.userId !== ctx.user.id && ctx.user.role !== "admin" && ctx.user.role !== "manager") {
+        throw new TRPCError({ code: "FORBIDDEN", message: "ليس لديك صلاحية" });
+      }
       
       const user = booking.userId ? await db.query.users.findFirst({
         where: eq(users.id, booking.userId),
@@ -233,20 +237,27 @@ export const bookingRouter = createRouter({
       return { success: true };
     }),
 
-  // Cancel booking (public)
-  cancel: publicQuery
+  // Cancel booking (owner or admin)
+  cancel: authedQuery
     .input(
       z.object({
         id: z.number(),
         reason: z.string().optional(),
       })
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
       const db = getDb();
+      const booking = await db.query.bookings.findFirst({
+        where: eq(bookings.id, input.id),
+      });
+      if (!booking) throw new TRPCError({ code: "NOT_FOUND", message: "الحجز غير موجود" });
+      if (booking.userId !== ctx.user.id && ctx.user.role !== "admin" && ctx.user.role !== "manager") {
+        throw new TRPCError({ code: "FORBIDDEN", message: "ليس لديك صلاحية لإلغاء هذا الحجز" });
+      }
       await db.update(bookings)
         .set({ 
           status: "cancelled", 
-          cancellationReason: input.reason || "Cancelled by user" 
+          cancellationReason: input.reason || "إلغاء بواسطة المستخدم" 
         })
         .where(eq(bookings.id, input.id));
       return { success: true };

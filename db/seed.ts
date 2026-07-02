@@ -88,9 +88,8 @@ async function seed() {
   const settingsData = [
     { key: "salon_name", value: "صالون الملوك" },
     { key: "salon_name_en", value: "Kings Salon" },
-    { key: "salon_phone", value: "0555000000" },
-    { key: "salon_email", value: "info@kingssalon.com" },
-    { key: "salon_address", value: "الرياض، المملكة العربية السعودية" },
+    { key: "salon_phone", value: "+20 1097314558" },
+    { key: "salon_address", value: "العاشر من رمضان - الحي العاشر 110 بجوار مستشفي العزل - خلف صيدليه احمد عبدالعال" },
     { key: "working_hours", value: "9:00 صباحاً - 9:00 مساءً" },
     { key: "friday_off", value: "true" },
   ];
@@ -106,7 +105,7 @@ async function seed() {
     await db.insert(schema.offers).values(offer);
   }
 
-  await db.insert(schema.branches).values({ name: "الفرع الرئيسي - الرياض", nameEn: "Main Branch - Riyadh", address: "شارع الملك فهد، الرياض", phone: "0555000000", email: "riyadh@kingssalon.com", isMain: true, isActive: true });
+  await db.insert(schema.branches).values({ name: "الفرع الرئيسي - العاشر من رمضان", nameEn: "Main Branch - 10th of Ramadan", address: "العاشر من رمضان - الحي العاشر 110 بجوار مستشفي العزل - خلف صيدليه احمد عبدالعال", phone: "+20 1097314558", isMain: true, isActive: true });
 
   console.log("Seed completed.");
   process.exit(0);

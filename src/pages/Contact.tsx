@@ -4,7 +4,7 @@ import { Layout } from "@/components/Layout";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
-import { MapPin, Phone, Mail, Clock, MessageCircle, Send } from "lucide-react";
+import { MapPin, Phone, Clock, MessageCircle, Send } from "lucide-react";
 
 export default function Contact() {
   const [form, setForm] = useState({
@@ -49,7 +49,7 @@ export default function Contact() {
                       <MapPin className="w-5 h-5 text-amber-400" />
                       <div>
                         <p className="text-gray-300 font-medium">العنوان</p>
-                        <p className="text-gray-400 text-sm">شارع الملك فهد، القاهرة، مصر</p>
+                        <p className="text-gray-400 text-sm">العاشر من رمضان - الحي العاشر 110 بجوار مستشفي العزل - خلف صيدليه احمد عبدالعال</p>
                       </div>
                     </div>
 
@@ -57,15 +57,7 @@ export default function Contact() {
                       <Phone className="w-5 h-5 text-amber-400" />
                       <div>
                         <p className="text-gray-300 font-medium">الهاتف</p>
-                        <p className="text-gray-400 text-sm">+20 1068824098</p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-3">
-                      <Mail className="w-5 h-5 text-amber-400" />
-                      <div>
-                        <p className="text-gray-300 font-medium">البريد الإلكتروني</p>
-                        <p className="text-gray-400 text-sm">info@salonelmalok.com</p>
+                        <p className="text-gray-400 text-sm">+20 1097314558</p>
                       </div>
                     </div>
 
@@ -82,7 +74,7 @@ export default function Contact() {
                   <div className="mt-6 pt-6 border-t border-amber-500/20">
                     <h3 className="text-lg font-bold mb-4 text-amber-400">تواصل عبر واتساب</h3>
                     <a
-                      href="https://wa.me/201068824098"
+                      href="https://wa.me/201097314558"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-2 px-4 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
@@ -157,7 +149,7 @@ export default function Contact() {
                         <Input
                           value={form.phone}
                           onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                          placeholder="+20 1068824098"
+                          placeholder="+20 1097314558"
                           className="bg-zinc-800 border-amber-500/20 text-white"
                           required
                         />

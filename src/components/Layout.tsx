@@ -313,10 +313,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <div className="space-y-4">
               <h3 className="text-lg font-bold text-amber-400">تواصل معنا</h3>
               <div className="space-y-2 text-gray-400 text-sm">
-                <p>العنوان: شارع الملك فهد، القاهرة، مصر</p>
-                <p>الهاتف: +20 1068824098</p>
-                <p>وتساب: +20 1068824098</p>
-                <p>البريد: info@salonelmalok.com</p>
+                <p>العنوان: العاشر من رمضان - الحي العاشر 110 بجوار مستشفي العزل - خلف صيدليه احمد عبدالعال</p>
+                <p>الهاتف: +20 1097314558</p>
+                <p>وتساب: +20 1097314558</p>
                 <p>ساعات العمل: السبت - الخميس 10 ص - 10 م</p>
                 <p>الجمعة: 4 م - 8 م</p>
               </div>

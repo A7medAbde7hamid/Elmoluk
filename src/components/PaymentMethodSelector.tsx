@@ -46,7 +46,7 @@ export function PaymentMethodSelector({ value, onChange, totalAmount, receiptIma
             قم بتحويل المبلغ {totalAmount.toLocaleString()} ج.م إلى الرقم التالي:
           </p>
           <div className="bg-black rounded-lg p-3 text-center mb-3">
-            <span className="text-2xl font-bold text-amber-400">01068824098</span>
+            <span className="text-2xl font-bold text-amber-400">01097314558</span>
           </div>
           <p className="text-gray-400 text-sm mb-3">ثم قم برفع صورة الإيصال:</p>
           <label className="flex items-center gap-2 px-4 py-3 bg-amber-500/10 border border-amber-500/30 rounded-lg cursor-pointer hover:bg-amber-500/20 transition-colors">

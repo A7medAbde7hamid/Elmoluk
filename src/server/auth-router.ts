@@ -1,7 +1,7 @@
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import * as cookie from "cookie";
-import { eq } from "drizzle-orm";
+import { eq, and, isNull } from "drizzle-orm";
 import { Session } from "@contracts/constants";
 import { getSessionCookieOptions } from "./lib/cookies.js";
 import { createRouter, publicQuery, authedQuery, adminQuery } from "./middleware.js";
@@ -12,7 +12,7 @@ import { signSessionToken } from "./lib/auth.js";
 import { findUserByEmail } from "./queries/users.js";
 import { TRPCError } from "@trpc/server";
 
-const SALT_ROUNDS = 10;
+const SALT_ROUNDS = 12;
 
 export const authRouter = createRouter({
   me: authedQuery.query((opts) => opts.ctx.user),
@@ -42,15 +42,20 @@ export const authRouter = createRouter({
       const existing = await findUserByEmail(input.email);
       if (existing) throw new TRPCError({ code: "CONFLICT", message: "البريد الإلكتروني مستخدم بالفعل" });
       const hashedPassword = await bcrypt.hash(input.password, SALT_ROUNDS);
+      const matchingBarber = await db.query.barbers.findFirst({ where: and(eq(barbers.email, input.email), isNull(barbers.userId)) });
+      const role = matchingBarber ? "barber" : "user";
       const result = await db.insert(users).values({
         name: input.name,
         email: input.email,
         phone: input.phone,
         password: hashedPassword,
-        role: "user",
+        role,
         lastSignInAt: new Date(),
       });
       const userId = Number(result[0].insertId);
+      if (matchingBarber) {
+        await db.update(barbers).set({ userId }).where(eq(barbers.id, matchingBarber.id));
+      }
       const token = await signSessionToken({ userId, clientId: env.appId });
       const opts = getSessionCookieOptions(ctx.req.headers);
       ctx.resHeaders.append("set-cookie", cookie.serialize(Session.cookieName, token, { ...opts, maxAge: Session.maxAgeMs / 1000 } as any));

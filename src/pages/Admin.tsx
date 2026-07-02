@@ -406,15 +406,15 @@ function AdminBarbers({ barbers, utils }: { barbers?: any[]; utils: any }) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editItem, setEditItem] = useState<any>(null);
   const [deleteId, setDeleteId] = useState<number | null>(null);
-  const [form, setForm] = useState({ name: "", nameEn: "", specialization: "", bio: "", phone: "", salaryType: "fixed", salaryAmount: "0" });
+  const [form, setForm] = useState({ name: "", nameEn: "", specialization: "", bio: "", phone: "", email: "", password: "", salaryType: "fixed", salaryAmount: "0" });
 
   const createMutation = trpc.barber.create.useMutation({ onSuccess: () => { utils.barber.list.invalidate(); setDialogOpen(false); resetForm(); toast.success("تمت إضافة الحلاق"); }, onError: (e) => toast.error(e.message) });
   const updateMutation = trpc.barber.update.useMutation({ onSuccess: () => { utils.barber.list.invalidate(); setDialogOpen(false); resetForm(); toast.success("تم تحديث بيانات الحلاق"); }, onError: (e) => toast.error(e.message) });
   const deleteMutation = trpc.barber.delete.useMutation({ onSuccess: () => { utils.barber.list.invalidate(); setDeleteId(null); toast.success("تم حذف الحلاق"); }, onError: (e) => toast.error(e.message) });
 
-  function resetForm() { setForm({ name: "", nameEn: "", specialization: "", bio: "", phone: "", salaryType: "fixed", salaryAmount: "0" }); setEditItem(null); }
+  function resetForm() { setForm({ name: "", nameEn: "", specialization: "", bio: "", phone: "", email: "", password: "", salaryType: "fixed", salaryAmount: "0" }); setEditItem(null); }
   function openCreate() { resetForm(); setDialogOpen(true); }
-  function openEdit(item: any) { setEditItem(item); setForm({ name: item.name, nameEn: item.nameEn || "", specialization: item.specialization || "", bio: item.bio || "", phone: item.phone || "", salaryType: item.salaryType || "fixed", salaryAmount: item.salaryAmount || "0" }); setDialogOpen(true); }
+  function openEdit(item: any) { setEditItem(item); setForm({ name: item.name, nameEn: item.nameEn || "", specialization: item.specialization || "", bio: item.bio || "", phone: item.phone || "", email: item.email || "", password: "", salaryType: item.salaryType || "fixed", salaryAmount: item.salaryAmount || "0" }); setDialogOpen(true); }
 
   return (
     <div className="space-y-4">
@@ -462,6 +462,8 @@ function AdminBarbers({ barbers, utils }: { barbers?: any[]; utils: any }) {
             <Input placeholder="التخصص" value={form.specialization} onChange={(e) => setForm({ ...form, specialization: e.target.value })} className="bg-zinc-800 border-amber-500/20 text-white" />
             <Textarea placeholder="نبذة تعريفية" value={form.bio} onChange={(e) => setForm({ ...form, bio: e.target.value })} className="bg-zinc-800 border-amber-500/20 text-white" />
             <Input placeholder="رقم الهاتف" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className="bg-zinc-800 border-amber-500/20 text-white" />
+            <Input placeholder="البريد الإلكتروني (لإنشاء حساب)" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="bg-zinc-800 border-amber-500/20 text-white" />
+            {!editItem && <Input placeholder="كلمة المرور (اختياري)" type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} className="bg-zinc-800 border-amber-500/20 text-white" />}
             <Select value={form.salaryType} onValueChange={(v) => setForm({ ...form, salaryType: v })}>
               <SelectTrigger className="bg-zinc-800 border-amber-500/20 text-white"><SelectValue placeholder="نوع الراتب" /></SelectTrigger>
               <SelectContent className="bg-zinc-800 border-amber-500/20 text-white">
@@ -476,8 +478,11 @@ function AdminBarbers({ barbers, utils }: { barbers?: any[]; utils: any }) {
             <Button className="flex-1 bg-amber-500 hover:bg-amber-600 text-black"
               disabled={createMutation.isPending || updateMutation.isPending}
               onClick={() => {
-                if (editItem) updateMutation.mutate({ id: editItem.id, name: form.name, nameEn: form.nameEn || undefined, specialization: form.specialization || undefined, bio: form.bio || undefined, phone: form.phone || undefined, salaryType: form.salaryType as any, salaryAmount: form.salaryAmount });
-                else createMutation.mutate({ name: form.name, nameEn: form.nameEn || undefined, specialization: form.specialization || undefined, bio: form.bio || undefined, phone: form.phone || undefined, salaryType: form.salaryType as any, salaryAmount: form.salaryAmount });
+                try {
+                  if (!form.name?.trim()) { toast.error("يرجى إدخال اسم الحلاق"); return }
+                  if (editItem) updateMutation.mutate({ id: editItem.id, name: form.name, nameEn: form.nameEn || undefined, specialization: form.specialization || undefined, bio: form.bio || undefined, phone: form.phone || undefined, salaryType: form.salaryType as any, salaryAmount: form.salaryAmount });
+                  else createMutation.mutate({ name: form.name, nameEn: form.nameEn || undefined, specialization: form.specialization || undefined, bio: form.bio || undefined, phone: form.phone || undefined, email: form.email || undefined, password: form.password || undefined, salaryType: form.salaryType as any, salaryAmount: form.salaryAmount });
+                } catch (err) { toast.error(err instanceof Error ? err.message : "حدث خطأ غير متوقع"); }
               }}>
               {editItem ? "تحديث" : "إضافة"}
             </Button>

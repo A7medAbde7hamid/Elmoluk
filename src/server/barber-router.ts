@@ -1,8 +1,10 @@
+import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { eq, desc, like, and } from "drizzle-orm";
+import { TRPCError } from "@trpc/server";
 import { createRouter, publicQuery, adminQuery } from "./middleware.js";
 import { getDb } from "./queries/connection.js";
-import { barbers, barberSchedules } from "@db/schema";
+import { barbers, barberSchedules, users } from "@db/schema";
 
 export const barberRouter = createRouter({
   // List all barbers (public)
@@ -61,17 +63,34 @@ export const barberRouter = createRouter({
         bio: z.string().optional(),
         phone: z.string().optional(),
         email: z.string().email().optional(),
+        password: z.string().optional(),
         salaryType: z.enum(["hourly", "fixed"]).default("fixed"),
         salaryAmount: z.string().default("0"),
       })
     )
     .mutation(async ({ input }) => {
       const db = getDb();
+      const { password, ...barberData } = input;
+      let userId: number | undefined;
+      if (input.email) {
+        const existing = await db.query.users.findFirst({ where: eq(users.email, input.email) });
+        if (existing) throw new TRPCError({ code: "CONFLICT", message: "البريد الإلكتروني مستخدم بالفعل" });
+        const hashedPassword = await bcrypt.hash(password || "barber123", 10);
+        const userResult = await db.insert(users).values({
+          name: input.name,
+          email: input.email,
+          password: hashedPassword,
+          role: "barber",
+          lastSignInAt: new Date(),
+        });
+        userId = Number(userResult[0].insertId);
+      }
       const result = await db.insert(barbers).values({
-        ...input,
+        ...barberData,
+        userId,
         salaryAmount: parseFloat(input.salaryAmount),
       });
-      return { id: Number(result[0].insertId), ...input };
+      return { id: Number(result[0].insertId), name: input.name, nameEn: input.nameEn, specialization: input.specialization, bio: input.bio, phone: input.phone, email: input.email, salaryType: input.salaryType, salaryAmount: input.salaryAmount };
     }),
 
   // Update barber (admin only)
