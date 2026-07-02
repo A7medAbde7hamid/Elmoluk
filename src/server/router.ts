@@ -10,7 +10,6 @@ import { paymentRouter } from "./payment-router.js";
 import { offerRouter } from "./offer-router.js";
 import { loyaltyRouter } from "./loyalty-router.js";
 import { notificationRouter } from "./notification-router.js";
-import { chatRouter } from "./chat-router.js";
 import { salonRouter } from "./salon-router.js";
 import { adminRouter } from "./admin-router.js";
 import { barberDashboardRouter } from "./barber-dashboard-router.js";
@@ -33,7 +32,6 @@ export const appRouter = createRouter({
   offer: offerRouter,
   loyalty: loyaltyRouter,
   notification: notificationRouter,
-  chat: chatRouter,
   salon: salonRouter,
   admin: adminRouter,
 });

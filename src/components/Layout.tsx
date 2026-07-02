@@ -49,7 +49,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
     { href: "/booking", label: "احجز موعد", icon: Calendar },
     { href: "/shop", label: "المتجر", icon: ShoppingBag },
     { href: "/offers", label: "العروض", icon: Tag },
-    { href: "/chat", label: "المساعدة", icon: MessageCircle },
     { href: "/barbers", label: "الحلاقين", icon: Scissors },
     { href: "/contact", label: "اتصل بنا", icon: MessageCircle },
   ];

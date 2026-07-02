@@ -9,7 +9,6 @@ import Admin from "./pages/Admin";
 import BarberDashboard from "./pages/BarberDashboard";
 import Packages from "./pages/Packages";
 import OffersPage from "./pages/OffersPage";
-import Chat from "./pages/Chat";
 import Contact from "./pages/Contact";
 import Barbers from "./pages/Barbers";
 import NotFound from "./pages/NotFound";
@@ -27,7 +26,6 @@ export default function App() {
       <Route path="/barber" element={<BarberDashboard />} />
       <Route path="/packages" element={<Packages />} />
       <Route path="/offers" element={<OffersPage />} />
-      <Route path="/chat" element={<Chat />} />
       <Route path="/contact" element={<Contact />} />
       <Route path="/barbers" element={<Barbers />} />
       <Route path="*" element={<NotFound />} />
