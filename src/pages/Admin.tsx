@@ -293,12 +293,15 @@ function AdminServices({ services, utils }: { services?: any[]; utils: any }) {
 
   const createMutation = trpc.service.create.useMutation({
     onSuccess: () => { utils.service.list.invalidate(); setDialogOpen(false); resetForm(); toast.success("تمت إضافة الخدمة"); },
+    onError: (e) => toast.error(e.message),
   });
   const updateMutation = trpc.service.update.useMutation({
     onSuccess: () => { utils.service.list.invalidate(); setDialogOpen(false); resetForm(); toast.success("تم تحديث الخدمة"); },
+    onError: (e) => toast.error(e.message),
   });
   const deleteMutation = trpc.service.delete.useMutation({
     onSuccess: () => { utils.service.list.invalidate(); setDeleteId(null); toast.success("تم حذف الخدمة"); },
+    onError: (e) => toast.error(e.message),
   });
 
   function resetForm() { setForm({ name: "", nameEn: "", description: "", price: "", duration: 30, category: "haircut", isHomeService: false, homeServiceFee: "" }); setEditItem(null); }
@@ -405,9 +408,9 @@ function AdminBarbers({ barbers, utils }: { barbers?: any[]; utils: any }) {
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [form, setForm] = useState({ name: "", nameEn: "", specialization: "", bio: "", phone: "", salaryType: "fixed", salaryAmount: "0" });
 
-  const createMutation = trpc.barber.create.useMutation({ onSuccess: () => { utils.barber.list.invalidate(); setDialogOpen(false); resetForm(); toast.success("تمت إضافة الحلاق"); } });
-  const updateMutation = trpc.barber.update.useMutation({ onSuccess: () => { utils.barber.list.invalidate(); setDialogOpen(false); resetForm(); toast.success("تم تحديث بيانات الحلاق"); } });
-  const deleteMutation = trpc.barber.delete.useMutation({ onSuccess: () => { utils.barber.list.invalidate(); setDeleteId(null); toast.success("تم حذف الحلاق"); } });
+  const createMutation = trpc.barber.create.useMutation({ onSuccess: () => { utils.barber.list.invalidate(); setDialogOpen(false); resetForm(); toast.success("تمت إضافة الحلاق"); }, onError: (e) => toast.error(e.message) });
+  const updateMutation = trpc.barber.update.useMutation({ onSuccess: () => { utils.barber.list.invalidate(); setDialogOpen(false); resetForm(); toast.success("تم تحديث بيانات الحلاق"); }, onError: (e) => toast.error(e.message) });
+  const deleteMutation = trpc.barber.delete.useMutation({ onSuccess: () => { utils.barber.list.invalidate(); setDeleteId(null); toast.success("تم حذف الحلاق"); }, onError: (e) => toast.error(e.message) });
 
   function resetForm() { setForm({ name: "", nameEn: "", specialization: "", bio: "", phone: "", salaryType: "fixed", salaryAmount: "0" }); setEditItem(null); }
   function openCreate() { resetForm(); setDialogOpen(true); }
@@ -654,9 +657,9 @@ function AdminOffers({ offers, utils }: { offers?: any[]; utils: any }) {
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [form, setForm] = useState({ code: "", name: "", description: "", discountType: "percentage", discountValue: "", maxDiscount: "", minOrderAmount: "0", usageLimit: 100, perUserLimit: 1, startDate: "", endDate: "" });
 
-  const createMutation = trpc.offer.create.useMutation({ onSuccess: () => { utils.offer.list.invalidate(); setDialogOpen(false); resetForm(); toast.success("تمت إضافة العرض"); } });
-  const updateMutation = trpc.offer.update.useMutation({ onSuccess: () => { utils.offer.list.invalidate(); setDialogOpen(false); resetForm(); toast.success("تم تحديث العرض"); } });
-  const deleteMutation = trpc.offer.delete.useMutation({ onSuccess: () => { utils.offer.list.invalidate(); setDeleteId(null); toast.success("تم حذف العرض"); } });
+  const createMutation = trpc.offer.create.useMutation({ onSuccess: () => { utils.offer.list.invalidate(); setDialogOpen(false); resetForm(); toast.success("تمت إضافة العرض"); }, onError: (e) => toast.error(e.message) });
+  const updateMutation = trpc.offer.update.useMutation({ onSuccess: () => { utils.offer.list.invalidate(); setDialogOpen(false); resetForm(); toast.success("تم تحديث العرض"); }, onError: (e) => toast.error(e.message) });
+  const deleteMutation = trpc.offer.delete.useMutation({ onSuccess: () => { utils.offer.list.invalidate(); setDeleteId(null); toast.success("تم حذف العرض"); }, onError: (e) => toast.error(e.message) });
 
   function resetForm() { setForm({ code: "", name: "", description: "", discountType: "percentage", discountValue: "", maxDiscount: "", minOrderAmount: "0", usageLimit: 100, perUserLimit: 1, startDate: "", endDate: "" }); setEditItem(null); }
   function openCreate() { resetForm(); setDialogOpen(true); }
@@ -759,9 +762,9 @@ function AdminPackages({ packages: packagesData, utils }: { packages?: any[]; ut
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [form, setForm] = useState({ name: "", nameEn: "", description: "", originalPrice: "", discountedPrice: "", discountPercent: 0, duration: 60, isVip: false });
 
-  const createMutation = trpc.package.create.useMutation({ onSuccess: () => { utils.package.list.invalidate(); setDialogOpen(false); resetForm(); toast.success("تمت إضافة الباقة"); } });
-  const updateMutation = trpc.package.update.useMutation({ onSuccess: () => { utils.package.list.invalidate(); setDialogOpen(false); resetForm(); toast.success("تم تحديث الباقة"); } });
-  const deleteMutation = trpc.package.delete.useMutation({ onSuccess: () => { utils.package.list.invalidate(); setDeleteId(null); toast.success("تم حذف الباقة"); } });
+  const createMutation = trpc.package.create.useMutation({ onSuccess: () => { utils.package.list.invalidate(); setDialogOpen(false); resetForm(); toast.success("تمت إضافة الباقة"); }, onError: (e) => toast.error(e.message) });
+  const updateMutation = trpc.package.update.useMutation({ onSuccess: () => { utils.package.list.invalidate(); setDialogOpen(false); resetForm(); toast.success("تم تحديث الباقة"); }, onError: (e) => toast.error(e.message) });
+  const deleteMutation = trpc.package.delete.useMutation({ onSuccess: () => { utils.package.list.invalidate(); setDeleteId(null); toast.success("تم حذف الباقة"); }, onError: (e) => toast.error(e.message) });
 
   function resetForm() { setForm({ name: "", nameEn: "", description: "", originalPrice: "", discountedPrice: "", discountPercent: 0, duration: 60, isVip: false }); setEditItem(null); }
   function openCreate() { resetForm(); setDialogOpen(true); }
@@ -849,8 +852,8 @@ function AdminAffiliates({ affiliates, utils }: { affiliates?: any[]; utils: any
   const [editItem, setEditItem] = useState<any>(null);
   const [form, setForm] = useState({ userId: 0, code: "", commissionRate: 10 });
 
-  const createMutation = trpc.admin.createAffiliate.useMutation({ onSuccess: () => { utils.admin.listAffiliates.invalidate(); setDialogOpen(false); resetForm(); toast.success("تمت إضافة المسوق"); } });
-  const updateMutation = trpc.admin.updateAffiliate.useMutation({ onSuccess: () => { utils.admin.listAffiliates.invalidate(); setDialogOpen(false); resetForm(); toast.success("تم تحديث بيانات المسوق"); } });
+  const createMutation = trpc.admin.createAffiliate.useMutation({ onSuccess: () => { utils.admin.listAffiliates.invalidate(); setDialogOpen(false); resetForm(); toast.success("تمت إضافة المسوق"); }, onError: (e) => toast.error(e.message) });
+  const updateMutation = trpc.admin.updateAffiliate.useMutation({ onSuccess: () => { utils.admin.listAffiliates.invalidate(); setDialogOpen(false); resetForm(); toast.success("تم تحديث بيانات المسوق"); }, onError: (e) => toast.error(e.message) });
 
   function resetForm() { setForm({ userId: 0, code: "", commissionRate: 10 }); setEditItem(null); }
   function openCreate() { resetForm(); setDialogOpen(true); }

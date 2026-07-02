@@ -1,8 +1,8 @@
 import * as jose from "jose";
 import * as cookie from "cookie";
+import { TRPCError } from "@trpc/server";
 import { env } from "./env.js";
 import { Session } from "@contracts/constants";
-import { Errors } from "@contracts/errors";
 import { findUserById } from "../queries/users.js";
 
 export type SessionPayload = {
@@ -52,15 +52,15 @@ export async function authenticateRequest(headers: Headers) {
   const token = cookies[Session.cookieName];
   if (!token) {
     console.warn("[auth] No session cookie found in request.");
-    throw Errors.forbidden("Invalid authentication token.");
+    throw new TRPCError({ code: "UNAUTHORIZED", message: "Invalid authentication token." });
   }
   const claim = await verifySessionToken(token);
   if (!claim) {
-    throw Errors.forbidden("Invalid authentication token.");
+    throw new TRPCError({ code: "UNAUTHORIZED", message: "Invalid authentication token." });
   }
   const user = await findUserById(claim.userId);
   if (!user) {
-    throw Errors.forbidden("User not found. Please re-login.");
+    throw new TRPCError({ code: "UNAUTHORIZED", message: "User not found. Please re-login." });
   }
   return user;
 }
