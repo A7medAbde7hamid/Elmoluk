@@ -28,16 +28,28 @@ export default function BarberDashboard() {
     paymentMethod: "cash" as const, paymentStatus: "paid" as const,
   });
 
-  const { data: profile } = trpc.barberDashboard.myProfile.useQuery(undefined, { retry: false });
-  const { data: todayBookings } = trpc.barberDashboard.todayBookings.useQuery(undefined, { enabled: activeTab === "today" });
-  const { data: services } = trpc.service.list.useQuery({}, { retry: false });
+  const { data: profile, isLoading: profileLoading } = trpc.barberDashboard.myProfile.useQuery(undefined, { retry: false });
+  const { data: todayBookings, isLoading: bookingsLoading, isError: bookingsError } = trpc.barberDashboard.todayBookings.useQuery(undefined, { enabled: activeTab === "today" });
+  const { data: services, isLoading: servicesLoading, isError: servicesError } = trpc.service.list.useQuery({}, { retry: false });
 
   const markMutation = trpc.barberDashboard.markStatus.useMutation({
     onSuccess: () => { utils.barberDashboard.todayBookings.invalidate(); toast.success("تم تحديث الحالة"); },
+    onError: (err) => toast.error(err.message),
   });
   const walkInMutation = trpc.barberDashboard.walkIn.useMutation({
     onSuccess: () => { utils.barberDashboard.todayBookings.invalidate(); setWalkInOpen(false); toast.success("تمت إضافة الحجز"); },
+    onError: (err) => toast.error(err.message),
   });
+
+  if (profileLoading) {
+    return (
+      <Layout>
+        <div className="min-h-screen bg-black pt-24 pb-20 flex items-center justify-center">
+          <div className="w-8 h-8 border-4 border-amber-500 border-t-transparent rounded-full animate-spin" />
+        </div>
+      </Layout>
+    );
+  }
 
   if (!profile) {
     return (
@@ -80,7 +92,20 @@ export default function BarberDashboard() {
 
             <TabsContent value="today">
               <div className="space-y-4">
-                {todayBookings?.length === 0 && (
+                {bookingsLoading && (
+                  <div className="flex justify-center py-8">
+                    <div className="w-8 h-8 border-4 border-amber-500 border-t-transparent rounded-full animate-spin" />
+                  </div>
+                )}
+                {bookingsError && (
+                  <Card className="bg-zinc-900/50 border-red-500/20">
+                    <CardContent className="p-8 text-center">
+                      <p className="text-red-400">فشل تحميل الحجوزات</p>
+                      <Button variant="outline" className="mt-2 border-amber-500/30 text-amber-400" onClick={() => utils.barberDashboard.todayBookings.invalidate()}>إعادة المحاولة</Button>
+                    </CardContent>
+                  </Card>
+                )}
+                {!bookingsLoading && !bookingsError && todayBookings?.length === 0 && (
                   <Card className="bg-zinc-900/50 border-amber-500/10">
                     <CardContent className="p-8 text-center">
                       <Scissors className="w-12 h-12 text-gray-600 mx-auto mb-3" />
@@ -88,7 +113,7 @@ export default function BarberDashboard() {
                     </CardContent>
                   </Card>
                 )}
-                {todayBookings?.map((b) => (
+                {!bookingsLoading && !bookingsError && todayBookings?.map((b) => (
                   <Card key={b.id} className="bg-zinc-900/50 border-amber-500/10">
                     <CardContent className="p-4">
                       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
@@ -159,7 +184,7 @@ export default function BarberDashboard() {
             <Input placeholder="المبلغ" type="number" value={walkIn.totalAmount}
               onChange={(e) => setWalkIn({ ...walkIn, totalAmount: Number(e.target.value) })}
               className="bg-zinc-800 border-amber-500/20 text-white" />
-            <Select value={walkIn.paymentMethod} onValueChange={(v: any) => setWalkIn({ ...walkIn, paymentMethod: v })}>
+            <Select value={walkIn.paymentMethod} onValueChange={(v) => setWalkIn({ ...walkIn, paymentMethod: v as "cash" | "card" | "vodafone_cash" })}>
               <SelectTrigger className="bg-zinc-800 border-amber-500/20 text-white"><SelectValue placeholder="طريقة الدفع" /></SelectTrigger>
               <SelectContent className="bg-zinc-800 border-amber-500/20 text-white">
                 <SelectItem value="cash">نقداً</SelectItem>
@@ -167,7 +192,7 @@ export default function BarberDashboard() {
                 <SelectItem value="vodafone_cash">فودافون كاش</SelectItem>
               </SelectContent>
             </Select>
-            <Input placeholder="الوقت (مثال: 14:30)" value={walkIn.bookingTime}
+            <Input placeholder="الوقت" type="time" value={walkIn.bookingTime}
               onChange={(e) => setWalkIn({ ...walkIn, bookingTime: e.target.value })}
               className="bg-zinc-800 border-amber-500/20 text-white" />
           </div>

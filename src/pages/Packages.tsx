@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Crown, Clock } from "lucide-react";
 
 export default function Packages() {
-  const { data: packages } = trpc.package.list.useQuery({});
+  const { data: packages, isLoading, isError } = trpc.package.list.useQuery({});
 
   return (
     <Layout>
@@ -19,30 +19,47 @@ export default function Packages() {
             <h1 className="text-4xl font-bold text-white mb-4">الباقات</h1>
             <p className="text-gray-400">اختر الباقة المناسبة لك واستمتع بأفضل الخدمات</p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {packages?.map((pkg) => (
-              <Card key={pkg.id} className={`bg-zinc-900/50 border ${pkg.isVip ? "border-amber-400" : "border-amber-500/10"} hover:border-amber-500/30 transition-all`}>
-                <CardContent className="p-6 text-center">
-                  {pkg.isVip && <span className="bg-amber-500 text-black px-3 py-1 rounded-full text-xs font-bold mb-3 inline-block">VIP</span>}
-                  <h3 className="text-xl font-bold text-white mb-2">{pkg.name}</h3>
-                  <p className="text-gray-400 text-sm mb-4">{pkg.description}</p>
-                  <div className="flex items-center justify-center gap-2 mb-4">
-                    <span className="text-gray-500 line-through">{pkg.originalPrice} ج.م</span>
-                    <span className="text-3xl font-bold text-amber-400">{pkg.discountedPrice} ج.م</span>
-                  </div>
-                  {pkg.discountPercent > 0 && (
-                    <span className="bg-green-500/20 text-green-400 px-2 py-0.5 rounded text-sm">وفر {pkg.discountPercent}%</span>
-                  )}
-                  <div className="flex items-center justify-center gap-1 text-gray-400 text-sm mt-3 mb-4">
-                    <Clock className="w-4 h-4" /><span>{pkg.duration} دقيقة</span>
-                  </div>
-                  <Link to={`/booking?packageId=${pkg.id}`}>
-                    <Button className="w-full bg-amber-500 hover:bg-amber-600 text-black">احجز الآن</Button>
-                  </Link>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          {isLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {[1,2,3].map((i) => (
+                <div key={i} className="h-72 bg-zinc-900 rounded-2xl animate-pulse" />
+              ))}
+            </div>
+          ) : isError ? (
+            <div className="text-center py-20">
+              <p className="text-red-400">فشل تحميل الباقات</p>
+            </div>
+          ) : !packages?.length ? (
+            <div className="text-center py-20">
+              <Crown className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+              <p className="text-gray-400">لا توجد باقات متاحة حالياً</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {packages?.map((pkg) => (
+                <Card key={pkg.id} className={`bg-zinc-900/50 border ${pkg.isVip ? "border-amber-400" : "border-amber-500/10"} hover:border-amber-500/30 transition-all`}>
+                  <CardContent className="p-6 text-center">
+                    {pkg.isVip && <span className="bg-amber-500 text-black px-3 py-1 rounded-full text-xs font-bold mb-3 inline-block">VIP</span>}
+                    <h3 className="text-xl font-bold text-white mb-2">{pkg.name}</h3>
+                    <p className="text-gray-400 text-sm mb-4">{pkg.description}</p>
+                    <div className="flex items-center justify-center gap-2 mb-4">
+                      <span className="text-gray-500 line-through">{pkg.originalPrice} ج.م</span>
+                      <span className="text-3xl font-bold text-amber-400">{pkg.discountedPrice} ج.م</span>
+                    </div>
+                    {pkg.discountPercent > 0 && (
+                      <span className="bg-green-500/20 text-green-400 px-2 py-0.5 rounded text-sm">وفر {pkg.discountPercent}%</span>
+                    )}
+                    <div className="flex items-center justify-center gap-1 text-gray-400 text-sm mt-3 mb-4">
+                      <Clock className="w-4 h-4" /><span>{pkg.duration} دقيقة</span>
+                    </div>
+                    <Link to={`/booking?packageId=${pkg.id}`}>
+                      <Button className="w-full bg-amber-500 hover:bg-amber-600 text-black">احجز الآن</Button>
+                    </Link>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </Layout>

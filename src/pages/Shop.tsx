@@ -7,7 +7,7 @@ import SEO from "@/components/SEO";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { ShoppingCart, Search, Package, Plus, Minus, MapPin } from "lucide-react";
+import { ShoppingCart, Search, Package, Plus, Minus, MapPin, Filter } from "lucide-react";
 import { toast } from "sonner";
 
 export default function Shop() {
@@ -19,6 +19,7 @@ export default function Shop() {
     return saved ? JSON.parse(saved) : {};
   });
   const saveCart = (c: Record<number, number>) => { setCart(c); localStorage.setItem("salon_cart", JSON.stringify(c)); };
+  const [cartOpen, setCartOpen] = useState(false);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [shippingAddress, setShippingAddress] = useState("");
 
@@ -82,6 +83,7 @@ export default function Shop() {
               <Button
                 variant="outline"
                 className="border-amber-500/30 text-amber-400 hover:bg-amber-500/10"
+                onClick={() => setCartOpen(!cartOpen)}
               >
                 <ShoppingCart className="w-5 h-5 ml-2" />
                 السلة
@@ -91,7 +93,7 @@ export default function Shop() {
                   </span>
                 )}
               </Button>
-              {cartCount > 0 && (
+              {cartOpen && cartCount > 0 && (
                 <div className="absolute top-full left-0 mt-2 w-80 bg-zinc-900 border border-amber-500/20 rounded-xl p-4 shadow-xl z-50">
                   <h3 className="text-white font-bold mb-3">سلة التسوق</h3>
                   <div className="space-y-2 max-h-60 overflow-y-auto">

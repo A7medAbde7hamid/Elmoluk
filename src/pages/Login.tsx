@@ -12,7 +12,7 @@ export default function Login() {
   const navigate = useNavigate();
   const utils = trpc.useUtils();
   const [loginForm, setLoginForm] = useState({ email: "", password: "" });
-  const [registerForm, setRegisterForm] = useState({ name: "", email: "", phone: "", password: "" });
+  const [registerForm, setRegisterForm] = useState({ name: "", email: "", phone: "", password: "", confirmPassword: "" });
 
   const loginMutation = trpc.auth.login.useMutation({
     onSuccess: async () => {
@@ -48,39 +48,41 @@ export default function Login() {
               <TabsTrigger value="register" className="flex-1 data-[state=active]:bg-amber-500 data-[state=active]:text-black">حساب جديد</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="login" className="space-y-4">
-              <Input placeholder="البريد الإلكتروني" type="email" value={loginForm.email}
-                onChange={(e) => setLoginForm({ ...loginForm, email: e.target.value })}
-                className="bg-zinc-800 border-amber-500/20 text-white placeholder:text-gray-500" />
-              <Input placeholder="كلمة المرور" type="password" value={loginForm.password}
-                onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
-                className="bg-zinc-800 border-amber-500/20 text-white placeholder:text-gray-500" />
-              <Button className="w-full bg-amber-500 hover:bg-amber-600 text-black font-bold"
-                disabled={loginMutation.isPending}
-                onClick={() => loginMutation.mutate(loginForm)}>
-                {loginMutation.isPending ? "جاري..." : "تسجيل الدخول"}
-              </Button>
-
+            <TabsContent value="login">
+              <form onSubmit={(e) => { e.preventDefault(); loginMutation.mutate(loginForm); }} className="space-y-4">
+                <Input placeholder="البريد الإلكتروني" type="email" value={loginForm.email} autoFocus
+                  onChange={(e) => setLoginForm({ ...loginForm, email: e.target.value })}
+                  className="bg-zinc-800 border-amber-500/20 text-white placeholder:text-gray-500" />
+                <Input placeholder="كلمة المرور" type="password" value={loginForm.password}
+                  onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
+                  className="bg-zinc-800 border-amber-500/20 text-white placeholder:text-gray-500" />
+                <Button type="submit" className="w-full bg-amber-500 hover:bg-amber-600 text-black font-bold" disabled={loginMutation.isPending}>
+                  {loginMutation.isPending ? "جاري..." : "تسجيل الدخول"}
+                </Button>
+              </form>
             </TabsContent>
 
-            <TabsContent value="register" className="space-y-4">
-              <Input placeholder="الاسم" value={registerForm.name}
-                onChange={(e) => setRegisterForm({ ...registerForm, name: e.target.value })}
-                className="bg-zinc-800 border-amber-500/20 text-white placeholder:text-gray-500" />
-              <Input placeholder="البريد الإلكتروني" type="email" value={registerForm.email}
-                onChange={(e) => setRegisterForm({ ...registerForm, email: e.target.value })}
-                className="bg-zinc-800 border-amber-500/20 text-white placeholder:text-gray-500" />
-              <Input placeholder="رقم الهاتف (اختياري)" value={registerForm.phone}
-                onChange={(e) => setRegisterForm({ ...registerForm, phone: e.target.value })}
-                className="bg-zinc-800 border-amber-500/20 text-white placeholder:text-gray-500" />
-              <Input placeholder="كلمة المرور" type="password" value={registerForm.password}
-                onChange={(e) => setRegisterForm({ ...registerForm, password: e.target.value })}
-                className="bg-zinc-800 border-amber-500/20 text-white placeholder:text-gray-500" />
-              <Button className="w-full bg-amber-500 hover:bg-amber-600 text-black font-bold"
-                disabled={registerMutation.isPending}
-                onClick={() => registerMutation.mutate(registerForm)}>
-                {registerMutation.isPending ? "جاري..." : "إنشاء الحساب"}
-              </Button>
+            <TabsContent value="register">
+              <form onSubmit={(e) => { e.preventDefault(); registerMutation.mutate(registerForm); }} className="space-y-4">
+                <Input placeholder="الاسم" value={registerForm.name} autoFocus
+                  onChange={(e) => setRegisterForm({ ...registerForm, name: e.target.value })}
+                  className="bg-zinc-800 border-amber-500/20 text-white placeholder:text-gray-500" />
+                <Input placeholder="البريد الإلكتروني" type="email" value={registerForm.email}
+                  onChange={(e) => setRegisterForm({ ...registerForm, email: e.target.value })}
+                  className="bg-zinc-800 border-amber-500/20 text-white placeholder:text-gray-500" />
+                <Input placeholder="رقم الهاتف (اختياري)" value={registerForm.phone}
+                  onChange={(e) => setRegisterForm({ ...registerForm, phone: e.target.value })}
+                  className="bg-zinc-800 border-amber-500/20 text-white placeholder:text-gray-500" />
+                <Input placeholder="كلمة المرور" type="password" value={registerForm.password}
+                  onChange={(e) => setRegisterForm({ ...registerForm, password: e.target.value })}
+                  className="bg-zinc-800 border-amber-500/20 text-white placeholder:text-gray-500" />
+                <Input placeholder="تأكيد كلمة المرور" type="password" value={registerForm.confirmPassword}
+                  onChange={(e) => setRegisterForm({ ...registerForm, confirmPassword: e.target.value })}
+                  className="bg-zinc-800 border-amber-500/20 text-white placeholder:text-gray-500" />
+                <Button type="submit" className="w-full bg-amber-500 hover:bg-amber-600 text-black font-bold" disabled={registerMutation.isPending}>
+                  {registerMutation.isPending ? "جاري..." : "إنشاء الحساب"}
+                </Button>
+              </form>
             </TabsContent>
           </Tabs>
         </CardContent>

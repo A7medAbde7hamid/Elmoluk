@@ -1,25 +1,27 @@
 import SEO from "@/components/SEO";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link } from "react-router";
+import { Layout } from "@/components/Layout";
 
 export default function NotFound() {
   return (
-    <>
+    <Layout>
       <SEO title="الصفحة غير موجودة" description="عذراً، الصفحة التي تبحث عنها غير موجودة." path="/404" />
-      <div className="min-h-screen flex items-center justify-center">
-      <Card className="w-full max-w-sm text-center">
-        <CardHeader>
-          <CardTitle className="text-4xl font-bold">404</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <p className="text-muted-foreground">Page not found</p>
-          <Button asChild className="w-full">
-            <Link to="/">Back to Home</Link>
-          </Button>
-        </CardContent>
-      </Card>
-    </div>
-    </>
+      <div className="min-h-screen bg-black pt-24 pb-20 flex items-center justify-center">
+        <div className="text-center max-w-md px-4">
+          <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-amber-500/10 flex items-center justify-center">
+            <span className="text-5xl">🔍</span>
+          </div>
+          <h1 className="text-6xl font-black text-amber-400 mb-4">404</h1>
+          <p className="text-2xl font-bold text-white mb-2">الصفحة غير موجودة</p>
+          <p className="text-gray-400 mb-8">عذراً، الصفحة التي تبحث عنها غير موجودة أو تم نقلها</p>
+          <Link to="/">
+            <Button className="bg-amber-500 hover:bg-amber-600 text-black px-8 py-6 text-lg font-bold rounded-xl">
+              العودة إلى الرئيسية
+            </Button>
+          </Link>
+        </div>
+      </div>
+    </Layout>
   );
 }

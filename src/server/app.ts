@@ -10,7 +10,9 @@ import { join } from "path";
 
 const app = new Hono<{ Bindings: HttpBindings }>();
 
-app.use(cors({ origin: ["http://localhost:5173", "http://localhost:4173"], credentials: true }));
+const allowedOrigins = ["http://localhost:5173", "http://localhost:4173", "https://elmoluk.vercel.app"];
+if (process.env.CORS_ORIGIN) allowedOrigins.push(process.env.CORS_ORIGIN);
+app.use(cors({ origin: allowedOrigins, credentials: true }));
 app.use(bodyLimit({ maxSize: 50 * 1024 * 1024 }));
 app.get("/uploads/*", async (c) => {
   try {

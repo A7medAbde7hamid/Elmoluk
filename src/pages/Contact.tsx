@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { MapPin, Phone, Clock, MessageCircle, Send } from "lucide-react";
+import { toast } from "sonner";
 
 export default function Contact() {
   const [form, setForm] = useState({
@@ -16,13 +17,17 @@ export default function Contact() {
     message: "",
   });
 
-  const contactMutation = trpc.salon.setSetting.useMutation();
+  const contactMutation = trpc.salon.setSetting.useMutation({
+    onSuccess: () => {
+      toast.success("تم إرسال رسالتك بنجاح! سنرد عليك قريباً.");
+      setForm({ name: "", email: "", phone: "", subject: "", message: "" });
+    },
+    onError: (e) => toast.error(e.message || "فشل إرسال الرسالة"),
+  });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    contactMutation.mutate({ key: "contact_form_submission", value: JSON.stringify(form) });
-    alert("تم إرسال رسالتك بنجاح! سنرد عليك قريبًا.");
-    setForm({ name: "", email: "", phone: "", subject: "", message: "" });
+    contactMutation.mutate({ key: `contact_${Date.now()}`, value: JSON.stringify({ ...form, submittedAt: new Date().toISOString() }) });
   };
 
   return (

@@ -4,6 +4,7 @@ import { eq, desc, and, or, gte, lte, sql } from "drizzle-orm";
 import { createRouter, publicQuery, authedQuery, adminQuery } from "./middleware.js";
 import { getDb } from "./queries/connection.js";
 import { bookings, barbers, services, packages, users, barberSchedules, loyaltyPoints } from "@db/schema";
+import { sendWhatsAppMessage, getWhatsAppLink } from "./lib/notifications.js";
 
 export const bookingRouter = createRouter({
   // List bookings with filters (admin)
@@ -190,9 +191,17 @@ export const bookingRouter = createRouter({
       };
       
       const result = await db.insert(bookings).values(bookingData);
+      const bookingId = Number(result[0].insertId);
+      
+      // Notify via WhatsApp
+      if (input.customerPhone) {
+        const barberName = null;
+        const msg = `مرحباً ${input.customerName || "عميلنا العزيز"} 👋\nتم استلام حجزك في صالون الملوك ✅\nالتاريخ: ${input.bookingDate}\nالوقت: ${input.bookingTime}\nكود التحقق: ${otpCode}\nسيتم تأكيد الحجز قريباً.`;
+        sendWhatsAppMessage(input.customerPhone, msg);
+      }
       
       return { 
-        id: Number(result[0].insertId), 
+        id: bookingId, 
         ...input, 
         barberId,
         otpCode,
@@ -219,14 +228,20 @@ export const bookingRouter = createRouter({
         const booking = await db.query.bookings.findFirst({
           where: eq(bookings.id, input.id),
         });
-        if (booking?.userId && booking.totalAmount > 0) {
-          await db.insert(loyaltyPoints).values({
-            userId: booking.userId,
-            points: Math.floor(booking.totalAmount),
-            type: "earned",
-            description: "نقاط مكتسبة من الحجز",
-            bookingId: booking.id,
-          });
+        if (booking) {
+          if (booking.userId && booking.totalAmount > 0) {
+            await db.insert(loyaltyPoints).values({
+              userId: booking.userId,
+              points: Math.floor(booking.totalAmount),
+              type: "earned",
+              description: "نقاط مكتسبة من الحجز",
+              bookingId: booking.id,
+            });
+          }
+          const phone = await getBookingPhone(db, booking);
+          if (phone) {
+            sendWhatsAppMessage(phone, `شكراً لحجزك في صالون الملوك 🎉\nنتمنى أن تكون خدمتنا على مستوى توقعاتك.\nننتظرك في زيارتك القادمة 👑`);
+          }
         }
       }
       
@@ -241,6 +256,17 @@ export const bookingRouter = createRouter({
       await db.update(bookings)
         .set({ status: "confirmed" })
         .where(eq(bookings.id, input.id));
+      
+      const booking = await db.query.bookings.findFirst({
+        where: eq(bookings.id, input.id),
+      });
+      if (booking) {
+        const phone = await getBookingPhone(db, booking);
+        if (phone) {
+          sendWhatsAppMessage(phone, `تم تأكيد حجزك في صالون الملوك ✅\nالتاريخ: ${booking.bookingDate}\nالوقت: ${booking.bookingTime}\nننتظرك 🤝`);
+        }
+      }
+      
       return { success: true };
     }),
 
@@ -265,6 +291,13 @@ export const bookingRouter = createRouter({
           description: "نقاط مكتسبة من الحجز",
           bookingId: booking.id,
         });
+      }
+      
+      if (booking) {
+        const phone = await getBookingPhone(db, booking);
+        if (phone) {
+          sendWhatsAppMessage(phone, `شكراً لحجزك في صالون الملوك 🎉\nنتمنى أن تكون خدمتنا على مستوى توقعاتك.\nتم إضافة ${Math.floor(booking.totalAmount)} نقطة ولاء إلى رصيدك.\nننتظرك في زيارتك القادمة 👑`);
+        }
       }
       
       return { success: true };
@@ -296,7 +329,7 @@ export const bookingRouter = createRouter({
       return { success: true };
     }),
 
-  // Verify OTP
+  // Verify OTP (rate-limited: max 3 failed attempts)
   verifyOtp: publicQuery
     .input(
       z.object({
@@ -311,10 +344,18 @@ export const bookingRouter = createRouter({
       });
       
       if (!booking) throw new Error("Booking not found");
-      if (booking.otpCode !== input.otpCode) throw new Error("Invalid OTP");
+      if (booking.otpVerified) throw new Error("OTP already verified");
+      if ((booking.otpAttempts ?? 0) >= 3) throw new Error("تم تجاوز الحد الأقصى لمحاولات التحقق");
+      
+      if (booking.otpCode !== input.otpCode) {
+        await db.update(bookings)
+          .set({ otpAttempts: (booking.otpAttempts ?? 0) + 1 })
+          .where(eq(bookings.id, input.id));
+        throw new Error("رمز التحقق غير صحيح");
+      }
       
       await db.update(bookings)
-        .set({ otpVerified: true })
+        .set({ otpVerified: true, otpAttempts: 0 })
         .where(eq(bookings.id, input.id));
       
       return { success: true };
@@ -403,7 +444,7 @@ function formatTime(minutes: number): string {
   return `${String(h).padStart(2, "0")}:${String(mn).padStart(2, "0")}`;
 }
 
-async function getSlotsForBarber(db: any, barberId: number, date: string, dayOfWeek: number) {
+async function getSlotsForBarber(db: ReturnType<typeof getDb>, barberId: number, date: string, dayOfWeek: number) {
   const schedule = await db.query.barberSchedules.findFirst({
     where: and(eq(barberSchedules.barberId, barberId), eq(barberSchedules.dayOfWeek, dayOfWeek)),
   });
@@ -419,7 +460,7 @@ async function getSlotsForBarber(db: any, barberId: number, date: string, dayOfW
 
   for (let m = start; m < end; m += 30) {
     const timeStr = formatTime(m);
-    const isBooked = existingBookings.some((b: any) => {
+    const isBooked = existingBookings.some((b) => {
       const bStart = getMinutes(b.bookingTime);
       const bEnd = bStart + (b.duration || 30);
       return m >= bStart && m < bEnd;
@@ -427,4 +468,16 @@ async function getSlotsForBarber(db: any, barberId: number, date: string, dayOfW
     if (!isBooked) slots.push(timeStr);
   }
   return slots;
+}
+
+async function getBookingPhone(db: ReturnType<typeof getDb>, booking: typeof bookings.$inferSelect): Promise<string | null> {
+  if (booking.notes) {
+    const match = booking.notes.match(/01\d{9}/);
+    if (match) return match[0];
+  }
+  if (booking.userId) {
+    const user = await db.query.users.findFirst({ where: eq(users.id, booking.userId) });
+    if (user?.phone) return user.phone;
+  }
+  return null;
 }

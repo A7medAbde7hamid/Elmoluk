@@ -1,3 +1,4 @@
+import { format } from "date-fns";
 import { z } from "zod";
 import { eq, desc, sql } from "drizzle-orm";
 import { createRouter, publicQuery, adminQuery } from "./middleware.js";
@@ -166,7 +167,7 @@ export const salonRouter = createRouter({
   // Dashboard overview
   dashboard: adminQuery.query(async () => {
     const db = getDb();
-    const today = new Date().toISOString().split("T")[0];
+    const today = format(new Date(), "yyyy-MM-dd");
     
     const [countResult, recent] = await Promise.all([
       db.select({

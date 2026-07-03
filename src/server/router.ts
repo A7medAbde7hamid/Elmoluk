@@ -12,6 +12,7 @@ import { loyaltyRouter } from "./loyalty-router.js";
 import { notificationRouter } from "./notification-router.js";
 import { salonRouter } from "./salon-router.js";
 import { adminRouter } from "./admin-router.js";
+import { userRouter } from "./user-router.js";
 import { barberDashboardRouter } from "./barber-dashboard-router.js";
 import { uploadRouter } from "./upload-router.js";
 import { createRouter, publicQuery } from "./middleware.js";
@@ -19,6 +20,7 @@ import { createRouter, publicQuery } from "./middleware.js";
 export const appRouter = createRouter({
   ping: publicQuery.query(() => ({ ok: true, ts: Date.now() })),
   auth: authRouter,
+  user: userRouter,
   barber: barberRouter,
   barberDashboard: barberDashboardRouter,
   upload: uploadRouter,

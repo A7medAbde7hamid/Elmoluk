@@ -1,3 +1,4 @@
+import { format } from "date-fns";
 import { z } from "zod";
 import { eq, desc, and } from "drizzle-orm";
 import { createRouter, barberQuery, adminQuery } from "./middleware.js";
@@ -21,7 +22,7 @@ export const barberDashboardRouter = createRouter({
       where: eq(barbers.userId, ctx.user.id),
     });
     if (!barber) throw new Error("Barber not linked to user account");
-    const today = new Date().toISOString().split("T")[0];
+    const today = format(new Date(), "yyyy-MM-dd");
     const list = await db.query.bookings.findMany({
       where: and(eq(bookings.barberId, barber.id), eq(bookings.bookingDate, today)),
       orderBy: [desc(bookings.bookingTime)],
@@ -34,12 +35,16 @@ export const barberDashboardRouter = createRouter({
     return enriched;
   }),
 
-  // Mark booking status
+  // Mark booking status (own bookings only)
   markStatus: barberQuery
     .input(z.object({ id: z.number(), status: z.enum(["confirmed", "completed", "no_show"]) }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
       const db = getDb();
-      await db.update(bookings).set({ status: input.status }).where(eq(bookings.id, input.id));
+      const barber = await db.query.barbers.findFirst({ where: eq(barbers.userId, ctx.user.id) });
+      if (!barber) throw new Error("Barber not linked to user account");
+      await db.update(bookings)
+        .set({ status: input.status })
+        .where(and(eq(bookings.id, input.id), eq(bookings.barberId, barber.id)));
       return { success: true };
     }),
 

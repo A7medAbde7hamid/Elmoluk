@@ -58,7 +58,7 @@ export const authRouter = createRouter({
       }
       const token = await signSessionToken({ userId, clientId: env.appId });
       const opts = getSessionCookieOptions(ctx.req.headers);
-      ctx.resHeaders.append("set-cookie", cookie.serialize(Session.cookieName, token, { ...opts, maxAge: Session.maxAgeMs / 1000 } as any));
+      ctx.resHeaders.append("set-cookie", cookie.serialize(Session.cookieName, token, { ...opts, maxAge: Session.maxAgeMs / 1000 }));
       return { success: true };
     }),
   login: publicQuery
@@ -75,7 +75,7 @@ export const authRouter = createRouter({
       await db.update(users).set({ lastSignInAt: new Date() }).where(eq(users.id, user.id));
       const token = await signSessionToken({ userId: user.id, clientId: env.appId });
       const opts = getSessionCookieOptions(ctx.req.headers);
-      ctx.resHeaders.append("set-cookie", cookie.serialize(Session.cookieName, token, { ...opts, maxAge: Session.maxAgeMs / 1000 } as any));
+      ctx.resHeaders.append("set-cookie", cookie.serialize(Session.cookieName, token, { ...opts, maxAge: Session.maxAgeMs / 1000 }));
       return { success: true };
     }),
   linkBarber: adminQuery

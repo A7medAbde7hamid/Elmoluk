@@ -80,7 +80,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   key={link.href}
                   to={link.href}
                   className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${
-                    location.pathname === link.href
+                    location.pathname === link.href || (link.href !== "/" && location.pathname.startsWith(link.href))
                       ? "text-amber-400 bg-amber-500/10"
                       : "text-white/80 hover:text-amber-300 hover:bg-amber-500/5"
                   }`}
@@ -207,7 +207,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 <Link
                   key={link.href}
                   to={link.href}
-                  className="flex items-center gap-3 px-4 py-3 rounded-lg text-white/80 hover:text-amber-400 hover:bg-amber-500/10 transition-colors"
+                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                    location.pathname === link.href || (link.href !== "/" && location.pathname.startsWith(link.href))
+                      ? "text-amber-400 bg-amber-500/10"
+                      : "text-white/80 hover:text-amber-400 hover:bg-amber-500/10"
+                  }`}
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   <link.icon className="w-5 h-5" />
@@ -217,7 +221,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
               {isAdmin && (
                 <Link
                   to="/admin"
-                  className="flex items-center gap-3 px-4 py-3 rounded-lg text-white/80 hover:text-amber-400 hover:bg-amber-500/10 transition-colors"
+                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                    location.pathname.startsWith("/admin")
+                      ? "text-amber-400 bg-amber-500/10"
+                      : "text-white/80 hover:text-amber-400 hover:bg-amber-500/10"
+                  }`}
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   <Shield className="w-5 h-5" />
@@ -227,7 +235,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
               {isBarber && (
                 <Link
                   to="/barber"
-                  className="flex items-center gap-3 px-4 py-3 rounded-lg text-white/80 hover:text-amber-400 hover:bg-amber-500/10 transition-colors"
+                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                    location.pathname.startsWith("/barber")
+                      ? "text-amber-400 bg-amber-500/10"
+                      : "text-white/80 hover:text-amber-400 hover:bg-amber-500/10"
+                  }`}
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   <Scissors className="w-5 h-5" />
@@ -323,7 +335,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </div>
 
           <div className="mt-8 pt-8 border-t border-amber-500/10 text-center text-gray-500 text-sm">
-            © 2025 صالون الملوك. جميع الحقوق محفوظة.
+            © {new Date().getFullYear()} صالون الملوك. جميع الحقوق محفوظة.
           </div>
         </div>
       </footer>

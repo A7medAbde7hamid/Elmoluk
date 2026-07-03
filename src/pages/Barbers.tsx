@@ -9,31 +9,8 @@ import { useNavigate } from "react-router";
 
 export default function Barbers() {
   const navigate = useNavigate();
-  const { data: barbers, isLoading } = trpc.barber.list.useQuery({ isActive: true });
+  const { data: barbers, isLoading, isError } = trpc.barber.list.useQuery({ isActive: true });
   const [selectedBarber, setSelectedBarber] = useState<number | null>(null);
-
-  if (isLoading) {
-    return (
-      <Layout>
-        <SEO title="فريق الحلاقين" description="تعرف على حلاقي صالون الملوك - فريق من المحترفين بخبرة أكثر من 10 سنوات في الحلاقة والعناية." path="/barbers" />
-        <div className="min-h-screen bg-black text-white py-20">
-          <div className="max-w-6xl mx-auto px-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[...Array(4)].map((_, i) => (
-                <div key={i} className="bg-zinc-900/50 rounded-xl p-6 animate-pulse">
-                  <div className="w-24 h-24 bg-zinc-800 rounded-full mx-auto mb-4" />
-                  <div className="h-6 bg-zinc-800 rounded w-2/3 mx-auto mb-2" />
-                  <div className="h-4 bg-zinc-800 rounded w-1/2 mx-auto mb-4" />
-                  <div className="h-20 bg-zinc-800 rounded mb-4" />
-                  <div className="h-10 bg-zinc-800 rounded" />
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </Layout>
-    );
-  }
 
   const currentBarber = selectedBarber 
     ? barbers?.find(b => b.id === selectedBarber) 
@@ -53,7 +30,23 @@ export default function Barbers() {
             <p className="text-gray-400 text-lg">نخبة من أمهر الحلاقين المحترفين لخدمتك</p>
           </div>
 
-          {currentBarber ? (
+          {isLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="bg-zinc-900/50 rounded-xl p-6 animate-pulse">
+                  <div className="w-24 h-24 bg-zinc-800 rounded-full mx-auto mb-4" />
+                  <div className="h-6 bg-zinc-800 rounded w-2/3 mx-auto mb-2" />
+                  <div className="h-4 bg-zinc-800 rounded w-1/2 mx-auto mb-4" />
+                  <div className="h-20 bg-zinc-800 rounded mb-4" />
+                  <div className="h-10 bg-zinc-800 rounded" />
+                </div>
+              ))}
+            </div>
+          ) : isError ? (
+            <div className="text-center py-20">
+              <p className="text-red-400">فشل تحميل بيانات الحلاقين</p>
+            </div>
+          ) : currentBarber ? (
             <div className="max-w-3xl mx-auto">
               <button
                 onClick={() => setSelectedBarber(null)}
@@ -101,10 +94,10 @@ export default function Barbers() {
                         </Button>
                         <Button
                           variant="outline"
-                          onClick={() => navigate("/reviews")}
+                          onClick={() => navigate(`/booking?barberId=${currentBarber.id}`)}
                           className="border-amber-500/30 text-amber-400 hover:bg-amber-500/10"
                         >
-                          عرض التقييمات
+                          احجز موعد
                         </Button>
                       </div>
                     </div>

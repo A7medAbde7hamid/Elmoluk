@@ -129,6 +129,7 @@ export const bookings = mysqlTable("bookings", {
   homeAddress: text("home_address"),
   otpCode: text("otp_code"),
   otpVerified: boolean("otp_verified").default(false).notNull(),
+  otpAttempts: int("otp_attempts").default(0).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull().onUpdateNow(),
 });

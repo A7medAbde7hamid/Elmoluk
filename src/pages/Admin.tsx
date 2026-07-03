@@ -41,6 +41,18 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+} from "recharts";
+import {
   Scissors,
   Users,
   Calendar,
@@ -64,6 +76,12 @@ export default function Admin() {
   const [activeTab, setActiveTab] = useState("dashboard");
   const utils = trpc.useUtils();
 
+  // Booking filters
+  const [bkgStatus, setBkgStatus] = useState<string>("");
+  const [bkgDateFrom, setBkgDateFrom] = useState("");
+  const [bkgDateTo, setBkgDateTo] = useState("");
+  const [bkgBarberId, setBkgBarberId] = useState<number | undefined>(undefined);
+
   const { data: adminStats, isLoading: dashLoading, error: dashError } = trpc.admin.stats.useQuery(undefined, {
     enabled: activeTab === "dashboard",
     retry: false,
@@ -77,7 +95,13 @@ export default function Admin() {
     retry: false,
   });
   const { data: bookings, isLoading: bkgLoading, error: bkgError } = trpc.booking.list.useQuery(
-    { limit: 50 },
+    { 
+      limit: 50,
+      ...(bkgStatus ? { status: bkgStatus as any } : {}),
+      ...(bkgDateFrom ? { dateFrom: bkgDateFrom } : {}),
+      ...(bkgDateTo ? { dateTo: bkgDateTo } : {}),
+      ...(bkgBarberId ? { barberId: bkgBarberId } : {}),
+    },
     { enabled: activeTab === "bookings", retry: false }
   );
   const { data: servicesData, isLoading: svcLoading, error: svcError } = trpc.service.list.useQuery(
@@ -95,6 +119,26 @@ export default function Admin() {
   const { data: offersData, isLoading: ofrLoading, error: ofrError } = trpc.offer.list.useQuery(
     { isActive: undefined },
     { enabled: activeTab === "offers", retry: false }
+  );
+  const { data: usersData, isLoading: usrLoading, error: usrError } = trpc.user.list.useQuery(
+    {},
+    { enabled: activeTab === "users", retry: false }
+  );
+  const { data: ordersData, isLoading: ordLoading, error: ordError } = trpc.order.list.useQuery(
+    {},
+    { enabled: activeTab === "orders", retry: false }
+  );
+  const { data: paymentsData, isLoading: payLoading, error: payError } = trpc.payment.list.useQuery(
+    {},
+    { enabled: activeTab === "payments", retry: false }
+  );
+  const { data: reviewsData, isLoading: revLoading, error: revError } = trpc.review.list.useQuery(
+    {},
+    { enabled: activeTab === "reviews", retry: false }
+  );
+  const { data: logsData, isLoading: logLoading, error: logError } = trpc.salon.getLogs.useQuery(
+    {},
+    { enabled: activeTab === "activities", retry: false }
   );
 
   const isAdmin = user?.role === "admin" || user?.role === "manager";
@@ -118,10 +162,40 @@ export default function Admin() {
 
   const statCards = [
     { title: "الإيرادات الكلية", value: `${adminStats?.totalRevenue || 0} ج.م`, icon: DollarSign, color: "text-amber-400" },
+    { title: "إيرادات اليوم", value: `${adminStats?.todayRevenue || 0} ج.م`, icon: DollarSign, color: "text-green-400" },
     { title: "عدد العملاء", value: adminStats?.totalClients || 0, icon: Users, color: "text-blue-400" },
     { title: "الزيارات الفعلية", value: adminStats?.totalVisits || 0, icon: TrendingUp, color: "text-green-400" },
-    { title: "إجمالي الحجوزات", value: adminStats?.totalBookings || 0, icon: Calendar, color: "text-blue-400" },
+    { title: "إجمالي الحجوزات", value: adminStats?.totalBookings || 0, icon: Calendar, color: "text-purple-400" },
+    { title: "حجوزات اليوم", value: adminStats?.todayBookings || 0, icon: Calendar, color: "text-amber-400" },
+    { title: "حجوزات معلقة", value: adminStats?.pendingBookings || 0, icon: Calendar, color: "text-yellow-400" },
   ];
+
+  const PIE_COLORS: Record<string, string> = {
+    pending: "#eab308",
+    confirmed: "#3b82f6",
+    completed: "#22c55e",
+    cancelled: "#ef4444",
+    no_show: "#6b7280",
+  };
+  const PIE_LABELS: Record<string, string> = {
+    pending: "معلق",
+    confirmed: "مؤكد",
+    completed: "مكتمل",
+    cancelled: "ملغي",
+    no_show: "لم يحضر",
+  };
+
+  const revenueChartConfig = {
+    revenue: { label: "الإيرادات", color: "#f59e0b" },
+  };
+
+  const bookingChartConfig = {
+    pending: { label: "معلق", color: "#eab308" },
+    confirmed: { label: "مؤكد", color: "#3b82f6" },
+    completed: { label: "مكتمل", color: "#22c55e" },
+    cancelled: { label: "ملغي", color: "#ef4444" },
+    no_show: { label: "لم يحضر", color: "#6b7280" },
+  };
 
   return (
     <Layout>
@@ -164,12 +238,27 @@ export default function Admin() {
               <TabsTrigger value="affiliates" className="data-[state=active]:bg-amber-500 text-white data-[state=active]:text-black">
                 <DollarSign className="w-4 h-4 ml-1" /><span className="hidden sm:inline">العمولات</span>
               </TabsTrigger>
+              <TabsTrigger value="users" className="data-[state=active]:bg-amber-500 text-white data-[state=active]:text-black">
+                <Users className="w-4 h-4 ml-1" /><span className="hidden sm:inline">المستخدمين</span>
+              </TabsTrigger>
+              <TabsTrigger value="orders" className="data-[state=active]:bg-amber-500 text-white data-[state=active]:text-black">
+                <ShoppingBag className="w-4 h-4 ml-1" /><span className="hidden sm:inline">الطلبات</span>
+              </TabsTrigger>
+              <TabsTrigger value="payments" className="data-[state=active]:bg-amber-500 text-white data-[state=active]:text-black">
+                <DollarSign className="w-4 h-4 ml-1" /><span className="hidden sm:inline">المدفوعات</span>
+              </TabsTrigger>
+              <TabsTrigger value="reviews" className="data-[state=active]:bg-amber-500 text-white data-[state=active]:text-black">
+                <Star className="w-4 h-4 ml-1" /><span className="hidden sm:inline">التقييمات</span>
+              </TabsTrigger>
+              <TabsTrigger value="activities" className="data-[state=active]:bg-amber-500 text-white data-[state=active]:text-black">
+                <BarChart3 className="w-4 h-4 ml-1" /><span className="hidden sm:inline">النشاطات</span>
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="dashboard">
               {dashLoading ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                  {[1,2,3,4].map((i) => (
+                  {[1,2,3,4,5,6,7].map((i) => (
                     <div key={i} className="bg-zinc-900/50 border border-amber-500/10 rounded-2xl p-6 animate-pulse">
                       <div className="h-4 bg-zinc-800 rounded w-2/3 mb-3" />
                       <div className="h-8 bg-zinc-800 rounded w-1/2" />
@@ -197,9 +286,74 @@ export default function Admin() {
                   ))}
                 </div>
               )}
+              
+              {/* Charts row */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Revenue chart */}
+                <Card className="bg-zinc-900/50 border-amber-500/10">
+                  <CardContent className="p-6">
+                    <h3 className="text-white font-bold mb-4">الإيرادات (آخر 30 يوم)</h3>
+                    <div className="h-64">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={adminStats?.revenueByDay || []}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
+                          <XAxis dataKey="date" stroke="#a1a1aa" tick={{ fontSize: 10 }} tickFormatter={(v) => v?.slice(5) || ""} />
+                          <YAxis stroke="#a1a1aa" tick={{ fontSize: 10 }} />
+                          <Tooltip contentStyle={{ backgroundColor: "#18181b", borderColor: "#f59e0b20", borderRadius: "12px" }} labelFormatter={(v) => `التاريخ: ${v}`} formatter={(v: any) => [`${v} ج.م`, "الإيرادات"]} />
+                          <Bar dataKey="revenue" fill="#f59e0b" radius={[4, 4, 0, 0]} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Booking status pie chart */}
+                <Card className="bg-zinc-900/50 border-amber-500/10">
+                  <CardContent className="p-6">
+                    <h3 className="text-white font-bold mb-4">توزيع الحجوزات</h3>
+                    <div className="h-64">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie data={(adminStats?.bookingByStatus || []).filter((b: any) => b.count > 0)} dataKey="count" nameKey="status" cx="50%" cy="50%" outerRadius={80} label={({ status, count }: any) => `${PIE_LABELS[status] || status}: ${count}`}>
+                            {(adminStats?.bookingByStatus || []).filter((b: any) => b.count > 0).map((entry: any) => (
+                              <Cell key={entry.status} fill={PIE_COLORS[entry.status] || "#6b7280"} />
+                            ))}
+                          </Pie>
+                          <Tooltip />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             </TabsContent>
 
             <TabsContent value="bookings">
+              {/* Filters */}
+              <div className="flex flex-wrap gap-3 mb-6 items-end">
+                <div>
+                  <label className="text-gray-400 text-xs block mb-1">الحالة</label>
+                  <Select value={bkgStatus} onValueChange={(v) => { setBkgStatus(v); utils.booking.list.invalidate(); }}>
+                    <SelectTrigger className="bg-zinc-800 border-amber-500/20 text-white w-32"><SelectValue placeholder="الكل" /></SelectTrigger>
+                    <SelectContent className="bg-zinc-800 border-amber-500/20 text-white">
+                      <SelectItem value="">الكل</SelectItem>
+                      <SelectItem value="pending">معلق</SelectItem>
+                      <SelectItem value="confirmed">مؤكد</SelectItem>
+                      <SelectItem value="completed">مكتمل</SelectItem>
+                      <SelectItem value="cancelled">ملغي</SelectItem>
+                      <SelectItem value="no_show">لم يحضر</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label className="text-gray-400 text-xs block mb-1">من تاريخ</label>
+                  <input type="date" value={bkgDateFrom} onChange={(e) => { setBkgDateFrom(e.target.value); utils.booking.list.invalidate(); }} className="bg-zinc-800 border border-amber-500/20 rounded-lg px-3 py-2 text-white text-sm" />
+                </div>
+                <div>
+                  <label className="text-gray-400 text-xs block mb-1">إلى تاريخ</label>
+                  <input type="date" value={bkgDateTo} onChange={(e) => { setBkgDateTo(e.target.value); utils.booking.list.invalidate(); }} className="bg-zinc-800 border border-amber-500/20 rounded-lg px-3 py-2 text-white text-sm" />
+                </div>
+              </div>
               {bkgLoading ? <LoadingSkeleton /> : bkgError ? <ErrorBox message="فشل تحميل الحجوزات" /> : <AdminBookingsTable bookings={bookings} />}
             </TabsContent>
 
@@ -225,6 +379,26 @@ export default function Admin() {
 
             <TabsContent value="affiliates">
               {affLoading ? <LoadingSkeleton /> : affError ? <ErrorBox message="فشل تحميل المسوقين" /> : <AdminAffiliates affiliates={affiliatesData} utils={utils} />}
+            </TabsContent>
+
+            <TabsContent value="users">
+              {usrLoading ? <LoadingSkeleton /> : usrError ? <ErrorBox message="فشل تحميل المستخدمين" /> : <AdminUsers users={usersData} utils={utils} />}
+            </TabsContent>
+
+            <TabsContent value="orders">
+              {ordLoading ? <LoadingSkeleton /> : ordError ? <ErrorBox message="فشل تحميل الطلبات" /> : <AdminOrders orders={ordersData} utils={utils} />}
+            </TabsContent>
+
+            <TabsContent value="payments">
+              {payLoading ? <LoadingSkeleton /> : payError ? <ErrorBox message="فشل تحميل المدفوعات" /> : <AdminPayments payments={paymentsData} utils={utils} />}
+            </TabsContent>
+
+            <TabsContent value="reviews">
+              {revLoading ? <LoadingSkeleton /> : revError ? <ErrorBox message="فشل تحميل التقييمات" /> : <AdminReviews reviews={reviewsData} utils={utils} />}
+            </TabsContent>
+
+            <TabsContent value="activities">
+              {logLoading ? <LoadingSkeleton /> : logError ? <ErrorBox message="فشل تحميل النشاطات" /> : <AdminActivityLogs logs={logsData} />}
             </TabsContent>
           </Tabs>
         </div>
@@ -847,6 +1021,232 @@ function AdminPackages({ packages: packagesData, utils }: { packages?: any[]; ut
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+    </div>
+  );
+}
+
+// ──────────── Users ────────────
+function AdminUsers({ users, utils }: { users?: any[]; utils: any }) {
+  const updateRole = trpc.user.updateRole.useMutation({
+    onSuccess: () => { utils.user.list.invalidate(); toast.success("تم تحديث الصلاحية"); },
+    onError: (e) => toast.error(e.message),
+  });
+
+  return (
+    <div className="space-y-4">
+      <h2 className="text-xl font-bold text-white mb-4">إدارة المستخدمين</h2>
+      <div className="overflow-x-auto">
+        <table className="w-full text-right">
+          <thead>
+            <tr className="border-b border-amber-500/10 text-gray-400 text-sm">
+              <th className="p-3">#</th>
+              <th className="p-3">الاسم</th>
+              <th className="p-3">البريد</th>
+              <th className="p-3">الهاتف</th>
+              <th className="p-3">الصلاحية</th>
+              <th className="p-3">تاريخ التسجيل</th>
+            </tr>
+          </thead>
+          <tbody>
+            {users?.map((u) => (
+              <tr key={u.id} className="border-b border-zinc-800 hover:bg-zinc-800/50">
+                <td className="p-3 text-white">{u.id}</td>
+                <td className="p-3 text-white">{u.name}</td>
+                <td className="p-3 text-gray-400">{u.email || "-"}</td>
+                <td className="p-3 text-gray-400">{u.phone || "-"}</td>
+                <td className="p-3">
+                  <Select value={u.role} onValueChange={(v) => updateRole.mutate({ id: u.id, role: v as any })}>
+                    <SelectTrigger className="bg-zinc-800 border-amber-500/20 text-white h-8 text-xs w-24"><SelectValue /></SelectTrigger>
+                    <SelectContent className="bg-zinc-800 border-amber-500/20 text-white">
+                      <SelectItem value="user">مستخدم</SelectItem>
+                      <SelectItem value="barber">حلاق</SelectItem>
+                      <SelectItem value="manager">مدير</SelectItem>
+                      <SelectItem value="admin">إدمن</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </td>
+                <td className="p-3 text-gray-400 text-xs">{new Date(u.createdAt).toLocaleDateString("ar-SA")}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+// ──────────── Orders ────────────
+function AdminOrders({ orders, utils }: { orders?: any[]; utils: any }) {
+  const updateStatus = trpc.order.updateStatus.useMutation({
+    onSuccess: () => { utils.order.list.invalidate(); toast.success("تم تحديث حالة الطلب"); },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const statusColors: Record<string, string> = {
+    pending: "bg-yellow-500/20 text-yellow-400",
+    processing: "bg-blue-500/20 text-blue-400",
+    shipped: "bg-purple-500/20 text-purple-400",
+    delivered: "bg-green-500/20 text-green-400",
+    cancelled: "bg-red-500/20 text-red-400",
+  };
+
+  return (
+    <div className="space-y-4">
+      <h2 className="text-xl font-bold text-white mb-4">إدارة الطلبات</h2>
+      {orders?.map((order) => (
+        <Card key={order.id} className="bg-zinc-900/50 border-amber-500/10">
+          <CardContent className="p-4">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+              <div>
+                <p className="text-white font-bold">طلب #{order.id}</p>
+                <p className="text-amber-400">{order.totalAmount} ج.م</p>
+                <p className="text-gray-500 text-xs">{new Date(order.createdAt).toLocaleDateString("ar-SA")}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Select value={order.status} onValueChange={(v) => updateStatus.mutate({ id: order.id, status: v as any })}>
+                  <SelectTrigger className="bg-zinc-800 border-amber-500/20 text-white h-8 text-xs w-28"><SelectValue /></SelectTrigger>
+                  <SelectContent className="bg-zinc-800 border-amber-500/20 text-white">
+                    <SelectItem value="pending">معلق</SelectItem>
+                    <SelectItem value="processing">قيد التجهيز</SelectItem>
+                    <SelectItem value="shipped">تم الشحن</SelectItem>
+                    <SelectItem value="delivered">تم التوصيل</SelectItem>
+                    <SelectItem value="cancelled">ملغي</SelectItem>
+                  </SelectContent>
+                </Select>
+                <span className={`px-3 py-1 rounded-full text-xs font-bold ${statusColors[order.status] || ""}`}>
+                  {order.paymentStatus === "paid" ? "مدفوع" : "غير مدفوع"}
+                </span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+}
+
+// ──────────── Payments ────────────
+function AdminPayments({ payments, utils }: { payments?: any[]; utils: any }) {
+  const updateStatus = trpc.payment.updateStatus.useMutation({
+    onSuccess: () => { utils.payment.list.invalidate(); toast.success("تم تحديث حالة الدفع"); },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const statusColors: Record<string, string> = {
+    pending: "bg-yellow-500/20 text-yellow-400",
+    completed: "bg-green-500/20 text-green-400",
+    failed: "bg-red-500/20 text-red-400",
+    refunded: "bg-purple-500/20 text-purple-400",
+  };
+
+  const methodLabels: Record<string, string> = {
+    cash: "نقدي",
+    card: "بطاقة",
+    vodafone_cash: "فودافون كاش",
+    wallet: "محفظة",
+    apple_pay: "Apple Pay",
+  };
+
+  return (
+    <div className="space-y-4">
+      <h2 className="text-xl font-bold text-white mb-4">إدارة المدفوعات</h2>
+      {payments?.map((p) => (
+        <Card key={p.id} className="bg-zinc-900/50 border-amber-500/10">
+          <CardContent className="p-4">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+              <div>
+                <p className="text-white font-bold">دفع #{p.id}</p>
+                <p className="text-amber-400">{p.amount} ج.م</p>
+                <p className="text-gray-400 text-xs">{methodLabels[p.paymentMethod] || p.paymentMethod}</p>
+                <p className="text-gray-500 text-xs">{new Date(p.createdAt).toLocaleDateString("ar-SA")}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Select value={p.status} onValueChange={(v) => updateStatus.mutate({ id: p.id, status: v as any })}>
+                  <SelectTrigger className="bg-zinc-800 border-amber-500/20 text-white h-8 text-xs w-28"><SelectValue /></SelectTrigger>
+                  <SelectContent className="bg-zinc-800 border-amber-500/20 text-white">
+                    <SelectItem value="pending">معلق</SelectItem>
+                    <SelectItem value="completed">مكتمل</SelectItem>
+                    <SelectItem value="failed">فشل</SelectItem>
+                    <SelectItem value="refunded">مسترجع</SelectItem>
+                  </SelectContent>
+                </Select>
+                {p.receiptImage && (
+                  <a href={p.receiptImage} target="_blank" rel="noopener noreferrer" className="text-amber-400 hover:text-amber-300 text-xs underline">إيصال</a>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+}
+
+// ──────────── Reviews ────────────
+function AdminReviews({ reviews, utils }: { reviews?: any[]; utils: any }) {
+  const toggleVis = trpc.review.toggleVisibility.useMutation({
+    onSuccess: () => { utils.review.list.invalidate(); toast.success("تم تغيير حالة التقييم"); },
+    onError: (e) => toast.error(e.message),
+  });
+
+  return (
+    <div className="space-y-4">
+      <h2 className="text-xl font-bold text-white mb-4">إدارة التقييمات</h2>
+      {reviews?.map((r) => (
+        <Card key={r.id} className={`bg-zinc-900/50 border-amber-500/10 ${!r.isVisible ? "opacity-50" : ""}`}>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-yellow-400">{Array.from({ length: 5 }, (_, i) => (i < r.rating ? "★" : "☆")).join("")}</span>
+                  <span className="text-white text-sm">({r.rating}/5)</span>
+                </div>
+                <p className="text-gray-300 text-sm">{r.comment || "لا يوجد تعليق"}</p>
+                <p className="text-gray-500 text-xs mt-1">{new Date(r.createdAt).toLocaleDateString("ar-SA")}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className={`px-2 py-1 rounded-full text-xs ${r.isVisible ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"}`}>
+                  {r.isVisible ? "ظاهر" : "مخفي"}
+                </span>
+                <Button size="sm" variant="ghost" className="text-amber-400 hover:text-amber-300" onClick={() => toggleVis.mutate({ id: r.id })}>
+                  {r.isVisible ? "إخفاء" : "إظهار"}
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+}
+
+// ──────────── Activity Logs ────────────
+function AdminActivityLogs({ logs }: { logs?: any[] }) {
+  return (
+    <div className="space-y-4">
+      <h2 className="text-xl font-bold text-white mb-4">سجل النشاطات</h2>
+      <div className="overflow-x-auto">
+        <table className="w-full text-right">
+          <thead>
+            <tr className="border-b border-amber-500/10 text-gray-400 text-sm">
+              <th className="p-3">التاريخ</th>
+              <th className="p-3">الإجراء</th>
+              <th className="p-3">الكيان</th>
+              <th className="p-3">التفاصيل</th>
+            </tr>
+          </thead>
+          <tbody>
+            {logs?.map((log) => (
+              <tr key={log.id} className="border-b border-zinc-800 hover:bg-zinc-800/50">
+                <td className="p-3 text-gray-400 text-xs">{new Date(log.createdAt).toLocaleDateString("ar-SA")} {new Date(log.createdAt).toLocaleTimeString("ar-SA", { hour: "2-digit", minute: "2-digit" })}</td>
+                <td className="p-3 text-white">{log.action}</td>
+                <td className="p-3 text-amber-400">{log.entity}{log.entityId ? ` #${log.entityId}` : ""}</td>
+                <td className="p-3 text-gray-400 text-xs max-w-xs truncate">{log.details || "-"}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

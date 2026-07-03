@@ -22,7 +22,7 @@ export default function Services() {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<Category>("all");
 
-  const { data: services, isLoading } = trpc.service.list.useQuery({
+  const { data: services, isLoading, isError } = trpc.service.list.useQuery({
     search: search || undefined,
     category: category === "all" ? undefined : category,
     isActive: true,
@@ -83,6 +83,15 @@ export default function Services() {
                 />
               ))}
             </div>
+          ) : isError ? (
+            <div className="text-center py-20">
+              <p className="text-red-400">فشل تحميل الخدمات</p>
+            </div>
+          ) : services?.length === 0 ? (
+            <div className="text-center py-20">
+              <Scissors className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+              <p className="text-gray-400 text-lg">لا توجد خدمات متاحة</p>
+            </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {services?.map((service) => (
@@ -138,13 +147,6 @@ export default function Services() {
                   </div>
                 </div>
               ))}
-            </div>
-          )}
-
-          {services?.length === 0 && (
-            <div className="text-center py-20">
-              <Scissors className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-              <p className="text-gray-400 text-lg">لا توجد خدمات متاحة</p>
             </div>
           )}
         </div>

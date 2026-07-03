@@ -32,7 +32,7 @@ let instance: ReturnType<typeof drizzle<typeof fullSchema>>;
 export function getDb() {
   if (!instance) {
     const pool = createPool();
-    instance = drizzle(pool as any, { mode: 'default', schema: fullSchema });
+    instance = drizzle(pool, { mode: 'default', schema: fullSchema });
   }
   return instance;
 }

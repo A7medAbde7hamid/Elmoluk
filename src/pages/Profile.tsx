@@ -17,6 +17,7 @@ import {
   CheckCircle,
   XCircle,
   HourglassIcon,
+  ShoppingBag,
 } from "lucide-react";
 
 export default function Profile() {
@@ -33,6 +34,9 @@ export default function Profile() {
     undefined,
     { enabled: !!userId }
   );
+  const { data: orders } = trpc.order.myOrders.useQuery(undefined, {
+    enabled: !!userId,
+  });
 
   const markRead = trpc.notification.markAsRead.useMutation();
   const markAllRead = trpc.notification.markAllRead.useMutation();
@@ -118,6 +122,13 @@ export default function Profile() {
               >
                 <Gift className="w-4 h-4 ml-2" />
                 الإشعارات
+              </TabsTrigger>
+              <TabsTrigger
+                value="orders"
+                className="data-[state=active]:bg-amber-500 data-[state=active]:text-black"
+              >
+                <ShoppingBag className="w-4 h-4 ml-2" />
+                طلباتي
               </TabsTrigger>
             </TabsList>
 
@@ -264,6 +275,41 @@ export default function Profile() {
                   </CardContent>
                 </Card>
               )}
+            </TabsContent>
+
+            <TabsContent value="orders">
+              <div className="space-y-4">
+                {orders && orders.length > 0 ? (
+                  orders.map((order) => (
+                    <Card key={order.id} className="bg-zinc-900/50 border-amber-500/10">
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-white font-bold">طلب #{order.id}</p>
+                            <p className="text-amber-400">{order.totalAmount} ج.م</p>
+                            <p className="text-gray-500 text-xs">{new Date(order.createdAt).toLocaleDateString("ar-SA")}</p>
+                          </div>
+                          <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                            order.status === "pending" ? "bg-yellow-500/20 text-yellow-400" :
+                            order.status === "processing" ? "bg-blue-500/20 text-blue-400" :
+                            order.status === "shipped" ? "bg-purple-500/20 text-purple-400" :
+                            order.status === "delivered" ? "bg-green-500/20 text-green-400" :
+                            "bg-red-500/20 text-red-400"
+                          }`}>{order.status}</span>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))
+                ) : (
+                  <div className="text-center py-20">
+                    <ShoppingBag className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+                    <p className="text-gray-400">لا توجد طلبات</p>
+                    <Link to="/shop">
+                      <Button className="bg-amber-500 hover:bg-amber-600 text-black mt-4">تسوق الآن</Button>
+                    </Link>
+                  </div>
+                )}
+              </div>
             </TabsContent>
 
             <TabsContent value="notifications">

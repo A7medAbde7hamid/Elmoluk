@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Calendar } from "@/components/ui/calendar";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { format } from "date-fns";
 import { Clock, User, MapPin, Check, Gift } from "lucide-react";
 import { toast } from "sonner";
@@ -34,6 +35,9 @@ export default function Booking() {
   const [paymentMethod, setPaymentMethod] = useState<"cash" | "card" | "vodafone_cash" | "wallet">("cash");
   const [receiptImage, setReceiptImage] = useState<string | null>(null);
   const [usePoints, setUsePoints] = useState(false);
+  const [otpDialogOpen, setOtpDialogOpen] = useState(false);
+  const [pendingBookingId, setPendingBookingId] = useState<number | null>(null);
+  const [otpCode, setOtpCode] = useState(["", "", "", ""]);
 
   const { data: services } = trpc.service.list.useQuery({ isActive: true });
   const { data: barbers } = trpc.barber.list.useQuery({ isActive: true });
@@ -49,9 +53,10 @@ export default function Booking() {
   });
 
   const createBooking = trpc.booking.create.useMutation({
-    onSuccess: () => {
+    onSuccess: (data) => {
       toast.success("تم الحجز بنجاح! تم إرسال كود التحقق");
-      navigate("/profile");
+      setPendingBookingId(data.id);
+      setOtpDialogOpen(true);
     },
     onError: (error) => {
       toast.error(error.message);
@@ -77,6 +82,17 @@ export default function Booking() {
   const redeemPoints = trpc.loyalty.redeemPoints.useMutation({
     onError: (error) => {
       toast.error(error.message);
+    },
+  });
+
+  const verifyOtp = trpc.booking.verifyOtp.useMutation({
+    onSuccess: () => {
+      toast.success("تم التحقق من الحجز بنجاح!");
+      setOtpDialogOpen(false);
+      navigate("/profile");
+    },
+    onError: (error) => {
+      toast.error(error.message || "كود التحقق غير صحيح");
     },
   });
 
@@ -128,6 +144,7 @@ export default function Booking() {
             bookingId: bookingResult.id,
             amount: String(finalAmount),
             paymentMethod,
+            receiptImage: receiptImage || undefined,
           });
           toast.success("تم الحجز بنجاح!");
           navigate("/profile");
@@ -577,6 +594,57 @@ export default function Booking() {
           )}
         </div>
       </div>
+
+      {/* OTP Verification Dialog */}
+      <Dialog open={otpDialogOpen} onOpenChange={(o) => { if (!o) setOtpDialogOpen(false); }}>
+        <DialogContent className="bg-zinc-900 border-amber-500/20 text-white max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-center">تأكيد الحجز</DialogTitle>
+            <DialogDescription className="text-center text-gray-400">
+              تم إرسال كود التحقق عبر واتساب. يرجى إدخال الكود
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-center gap-3 my-6" dir="ltr">
+            {otpCode.map((digit, i) => (
+              <input
+                key={i}
+                type="text"
+                maxLength={1}
+                value={digit}
+                onChange={(e) => {
+                  const val = e.target.value.replace(/\D/g, "");
+                  const newCode = [...otpCode];
+                  newCode[i] = val;
+                  setOtpCode(newCode);
+                  if (val && i < 3) {
+                    const next = document.getElementById(`otp-${i + 1}`);
+                    next?.focus();
+                  }
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Backspace" && !digit && i > 0) {
+                    const prev = document.getElementById(`otp-${i - 1}`);
+                    prev?.focus();
+                  }
+                }}
+                id={`otp-${i}`}
+                className="w-14 h-14 text-center text-2xl font-bold bg-zinc-800 border border-amber-500/30 rounded-xl text-white focus:border-amber-500 focus:outline-none"
+              />
+            ))}
+          </div>
+          <Button
+            className="w-full bg-amber-500 hover:bg-amber-600 text-black font-bold"
+            disabled={otpCode.some((d) => !d) || verifyOtp.isPending}
+            onClick={() => {
+              if (pendingBookingId) {
+                verifyOtp.mutate({ id: pendingBookingId, otpCode: otpCode.join("") });
+              }
+            }}
+          >
+            {verifyOtp.isPending ? "جاري التحقق..." : "تأكيد"}
+          </Button>
+        </DialogContent>
+      </Dialog>
     </Layout>
   );
 }

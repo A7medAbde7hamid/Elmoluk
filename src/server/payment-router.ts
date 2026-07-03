@@ -41,16 +41,19 @@ export const paymentRouter = createRouter({
         orderId: z.number().optional(),
         amount: z.string(),
         paymentMethod: z.enum(["cash", "card", "paypal", "vodafone_cash", "apple_pay", "wallet"]),
+        receiptImage: z.string().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
       const db = getDb();
+      const { receiptImage, ...rest } = input;
       
       const result = await db.insert(payments).values({
-        ...input,
+        ...rest,
         userId: ctx.user.id,
         status: "pending",
         amount: parseFloat(input.amount),
+        receiptImage: receiptImage || null,
       });
       
       return { id: Number(result[0].insertId), ...input };

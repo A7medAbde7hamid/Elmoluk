@@ -4,6 +4,12 @@ import { createRouter, adminQuery, authedQuery } from "./middleware.js";
 import { getDb } from "./queries/connection.js";
 import { loyaltyPoints } from "@db/schema";
 
+function calcBalance(points: { type: string | null; points: number }[]) {
+  const earned = points.filter((p) => p.type === "earned").reduce((s, p) => s + p.points, 0);
+  const redeemed = points.filter((p) => p.type === "redeemed").reduce((s, p) => s + p.points, 0);
+  return { earned, redeemed, available: earned - redeemed };
+}
+
 export const loyaltyRouter = createRouter({
   // Get user's points
   myPoints: authedQuery.query(async ({ ctx }) => {
@@ -14,19 +20,9 @@ export const loyaltyRouter = createRouter({
       orderBy: [desc(loyaltyPoints.createdAt)],
     });
     
-    const earned = points
-      .filter((p) => p.type === "earned")
-      .reduce((sum, p) => sum + p.points, 0);
-    const redeemed = points
-      .filter((p) => p.type === "redeemed")
-      .reduce((sum, p) => sum + p.points, 0);
+    const { earned, redeemed, available } = calcBalance(points);
     
-    return {
-      total: earned - redeemed,
-      earned,
-      redeemed,
-      history: points,
-    };
+    return { total: available, earned, redeemed, history: points };
   }),
 
   // Add points (admin)
@@ -67,14 +63,7 @@ export const loyaltyRouter = createRouter({
         where: eq(loyaltyPoints.userId, ctx.user.id),
       });
       
-      const earned = points
-        .filter((p) => p.type === "earned")
-        .reduce((sum, p) => sum + p.points, 0);
-      const redeemed = points
-        .filter((p) => p.type === "redeemed")
-        .reduce((sum, p) => sum + p.points, 0);
-      
-      const available = earned - redeemed;
+      const { available } = calcBalance(points);
       
       if (available < input.points) {
         throw new Error(`رصيد غير كاف. النقاط المتاحة: ${available}`);
