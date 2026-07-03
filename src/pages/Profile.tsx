@@ -2,6 +2,7 @@ import { Link } from "react-router";
 import { trpc } from "@/providers/trpc";
 import { useAuth } from "@/hooks/useAuth";
 import { Layout } from "@/components/Layout";
+import SEO from "@/components/SEO";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -54,6 +55,7 @@ export default function Profile() {
 
   return (
     <Layout>
+      <SEO title="الملف الشخصي" description="الملف الشخصي - حجوزاتي، نقاط الولاء، والإشعارات." path="/profile" />
       <div className="min-h-screen bg-black pt-24 pb-20">
         <div className="max-w-6xl mx-auto px-4">
           {/* Profile Header */}

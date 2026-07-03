@@ -1,6 +1,7 @@
 import { Link } from "react-router";
 import { trpc } from "@/providers/trpc";
 import { Layout } from "@/components/Layout";
+import SEO from "@/components/SEO";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Crown, Clock } from "lucide-react";
@@ -10,6 +11,7 @@ export default function Packages() {
 
   return (
     <Layout>
+      <SEO title="الباقات والعروض" description="باقات صالون الملوك الملكية - وفر مع باقاتنا المميزة للحلاقة والعناية الكاملة." path="/packages" />
       <div className="min-h-screen bg-black pt-24 pb-20">
         <div className="max-w-5xl mx-auto px-4">
           <div className="text-center mb-12">

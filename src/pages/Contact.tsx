@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { trpc } from "@/providers/trpc";
 import { Layout } from "@/components/Layout";
+import SEO from "@/components/SEO";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
@@ -26,6 +27,7 @@ export default function Contact() {
 
   return (
     <Layout>
+      <SEO title="اتصل بنا" description="تواصل مع صالون الملوك في العاشر من رمضان. عنوان: الحي العاشر 110. تليفون: +20 1097314558." path="/contact" />
       <div className="min-h-screen bg-black text-white py-20">
         <div className="max-w-6xl mx-auto px-4">
           <div className="text-center mb-12">

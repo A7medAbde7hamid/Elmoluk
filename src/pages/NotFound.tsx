@@ -1,10 +1,13 @@
+import SEO from "@/components/SEO";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link } from "react-router";
 
 export default function NotFound() {
   return (
-    <div className="min-h-screen flex items-center justify-center">
+    <>
+      <SEO title="الصفحة غير موجودة" description="عذراً، الصفحة التي تبحث عنها غير موجودة." path="/404" />
+      <div className="min-h-screen flex items-center justify-center">
       <Card className="w-full max-w-sm text-center">
         <CardHeader>
           <CardTitle className="text-4xl font-bold">404</CardTitle>
@@ -17,5 +20,6 @@ export default function NotFound() {
         </CardContent>
       </Card>
     </div>
+    </>
   );
 }

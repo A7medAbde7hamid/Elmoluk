@@ -3,6 +3,7 @@ import { useNavigate } from "react-router";
 import { trpc } from "@/providers/trpc";
 import { useAuth } from "@/hooks/useAuth";
 import { Layout } from "@/components/Layout";
+import SEO from "@/components/SEO";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -59,6 +60,7 @@ export default function Shop() {
 
   return (
     <Layout>
+      <SEO title="منتجات العناية" description="تسوق منتجات العناية بالشعر والبشرة من صالون الملوك. شامبو، زيوت، كريمات ومشط خشبي." path="/shop" />
       <div className="min-h-screen bg-black pt-24 pb-20">
         <div className="max-w-7xl mx-auto px-4">
           <div className="text-center mb-10">

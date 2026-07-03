@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router";
 import { trpc } from "@/providers/trpc";
 import { Layout } from "@/components/Layout";
+import SEO from "@/components/SEO";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Scissors, Clock, Search, ShoppingCart } from "lucide-react";
@@ -29,6 +30,7 @@ export default function Services() {
 
   return (
     <Layout>
+      <SEO title="خدمات الحلاقة والعناية" description="تعرف على خدمات صالون الملوك: حلاقة كاملة، تهذيب لحية، عناية بالبشرة، بخار، صبغ شعر، خدمة منزلية. احجز موعدك الآن." path="/services" />
       <div className="min-h-screen bg-black pt-24 pb-20">
         <div className="max-w-7xl mx-auto px-4">
           {/* Header */}

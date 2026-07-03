@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { trpc } from "@/providers/trpc";
+import SEO from "@/components/SEO";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,7 +33,9 @@ export default function Login() {
   });
 
   return (
-    <div className="min-h-screen bg-black flex items-center justify-center p-4">
+    <>
+      <SEO title="تسجيل الدخول" description="تسجيل الدخول إلى حسابك في صالون الملوك." path="/login" />
+      <div className="min-h-screen bg-black flex items-center justify-center p-4">
       <Card className="w-full max-w-md bg-zinc-900 border-amber-500/20">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl text-white">صالون الملوك</CardTitle>
@@ -83,5 +86,6 @@ export default function Login() {
         </CardContent>
       </Card>
     </div>
+    </>
   );
 }

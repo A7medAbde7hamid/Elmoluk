@@ -3,6 +3,8 @@ import { Link } from "react-router";
 import { trpc } from "@/providers/trpc";
 import { Layout } from "@/components/Layout";
 import { Button } from "@/components/ui/button";
+import SEO from "@/components/SEO";
+import JSONLD from "@/components/JSONLD";
 import {
   Scissors,
   Crown,
@@ -53,6 +55,12 @@ export default function Home() {
 
   return (
     <Layout>
+      <SEO
+        title="أفضل صالون حلاقة رجالي في العاشر من رمضان"
+        description="صالون الملوك - وجهتك الأولى للعناية بالرجل في العاشر من رمضان. حجز موعد، خدمات حلاقة، عناية بالبشرة، منتجات، وباقات ملكية."
+        path="/"
+      />
+      <JSONLD />
       {/* Hero */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-black via-black/95 to-black" />
