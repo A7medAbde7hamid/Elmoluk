@@ -357,15 +357,17 @@ export const bookingRouter = createRouter({
       const [y, m, d] = input.date.split("-").map(Number);
       const dayOfWeek = new Date(Date.UTC(y, m - 1, d)).getUTCDay();
       
-      // Auto-seed default schedules if none exist
-      const existingSchedules = await db.query.barberSchedules.findFirst();
-      if (!existingSchedules) {
-        const allBarbers = await db.query.barbers.findMany({
-          where: eq(barbers.isActive, true),
+      // Auto-seed barber schedules if any barber is missing them
+      const allBarbers = await db.query.barbers.findMany({
+        where: eq(barbers.isActive, true),
+      });
+      for (const barber of allBarbers) {
+        const existing = await db.query.barberSchedules.findFirst({
+          where: eq(barberSchedules.barberId, barber.id),
         });
-        for (const barber of allBarbers) {
+        if (!existing) {
           for (let day = 0; day < 7; day++) {
-            if (day === 5) continue; // Friday off
+            if (day === 5) continue;
             await db.insert(barberSchedules).values({
               barberId: barber.id,
               dayOfWeek: day,
@@ -381,10 +383,6 @@ export const bookingRouter = createRouter({
         return getSlotsForBarber(db, input.barberId, input.date, dayOfWeek);
       }
       
-      // No barber specified: return slots for all barbers
-      const allBarbers = await db.query.barbers.findMany({
-        where: eq(barbers.isActive, true),
-      });
       const allSlots = new Set<string>();
       for (const b of allBarbers) {
         const slots = await getSlotsForBarber(db, b.id, input.date, dayOfWeek);
@@ -393,6 +391,17 @@ export const bookingRouter = createRouter({
       return [...allSlots].sort();
     }),
 });
+
+function getMinutes(time: string): number {
+  const [h, mn] = time.split(":").map(Number);
+  return h * 60 + mn;
+}
+
+function formatTime(minutes: number): string {
+  const h = Math.floor(minutes / 60);
+  const mn = minutes % 60;
+  return `${String(h).padStart(2, "0")}:${String(mn).padStart(2, "0")}`;
+}
 
 async function getSlotsForBarber(db: any, barberId: number, date: string, dayOfWeek: number) {
   const schedule = await db.query.barberSchedules.findFirst({
@@ -405,17 +414,15 @@ async function getSlotsForBarber(db: any, barberId: number, date: string, dayOfW
   });
 
   const slots: string[] = [];
-  const start = new Date(`2000-01-01T${schedule.startTime}`);
-  const end = new Date(`2000-01-01T${schedule.endTime}`);
+  const start = getMinutes(schedule.startTime);
+  const end = getMinutes(schedule.endTime);
 
-  for (let t = new Date(start); t < end; t.setMinutes(t.getMinutes() + 30)) {
-    const timeStr = t.toTimeString().slice(0, 5);
+  for (let m = start; m < end; m += 30) {
+    const timeStr = formatTime(m);
     const isBooked = existingBookings.some((b: any) => {
-      const bookingStart = new Date(`2000-01-01T${b.bookingTime}`);
-      const bookingEnd = new Date(bookingStart);
-      bookingEnd.setMinutes(bookingEnd.getMinutes() + (b.duration || 30));
-      const slotTime = new Date(`2000-01-01T${timeStr}`);
-      return slotTime >= bookingStart && slotTime < bookingEnd;
+      const bStart = getMinutes(b.bookingTime);
+      const bEnd = bStart + (b.duration || 30);
+      return m >= bStart && m < bEnd;
     });
     if (!isBooked) slots.push(timeStr);
   }
