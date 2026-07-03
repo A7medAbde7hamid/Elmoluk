@@ -81,11 +81,11 @@ export default function Booking() {
   };
 
   const handleSubmit = () => {
-    if (!selectedService || !selectedBarber || !selectedDate || !selectedTime) return;
+    if (!selectedService || !selectedDate || !selectedTime) return;
     
     createBooking.mutate(
       {
-        barberId: selectedBarber,
+        barberId: selectedBarber ?? undefined,
         serviceId: selectedService,
         bookingDate: selectedDate.toISOString().split("T")[0],
         bookingTime: selectedTime,
@@ -205,7 +205,10 @@ export default function Booking() {
               </div>
               <div className="flex justify-end mt-6">
                 <Button
-                  onClick={() => setStep(2)}
+                  onClick={() => {
+                    setSelectedBarber(null);
+                    setStep(2);
+                  }}
                   disabled={!selectedService}
                   className="bg-amber-500 hover:bg-amber-600 text-black disabled:opacity-50"
                 >
@@ -232,7 +235,12 @@ export default function Booking() {
                 >
                   <User className="w-12 h-12 text-gray-400 mx-auto mb-3" />
                   <h3 className="text-lg font-bold text-white">أي حلاق</h3>
-                  <p className="text-gray-400 text-sm">سيتم تحديد حلاق متاح</p>
+                  <p className="text-gray-400 text-sm">سيتم تحديد حلاق متاح تلقائياً</p>
+                  {selectedBarber === null && (
+                    <span className="inline-block mt-2 text-xs text-amber-400 bg-amber-500/10 px-3 py-1 rounded-full">
+                      تم الاختيار
+                    </span>
+                  )}
                 </button>
                 {barbers?.map((barber) => (
                   <button
@@ -280,10 +288,9 @@ export default function Booking() {
                 </Button>
                 <Button
                   onClick={() => setStep(3)}
-                  disabled={selectedBarber === null}
-                  className="bg-amber-500 hover:bg-amber-600 text-black disabled:opacity-50"
+                  className="bg-amber-500 hover:bg-amber-600 text-black"
                 >
-                  التالي
+                  {selectedBarber === null ? "تخطي (أي حلاق)" : "التالي"}
                 </Button>
               </div>
             </div>
@@ -314,15 +321,15 @@ export default function Booking() {
                   <Label className="text-white mb-3 block">الوقت</Label>
                   {selectedDate ? (
                     timeSlots && timeSlots.length > 0 ? (
-                      <div className="grid grid-cols-3 gap-2">
+                      <div className="flex flex-wrap gap-2">
                         {timeSlots.map((slot) => (
                           <button
                             key={slot}
                             onClick={() => setSelectedTime(slot)}
-                            className={`p-3 rounded-xl text-sm font-medium transition-all ${
+                            className={`px-5 py-3 rounded-xl text-sm font-bold transition-all duration-200 ${
                               selectedTime === slot
-                                ? "bg-amber-500 text-black"
-                                : "bg-zinc-900 text-gray-300 hover:bg-zinc-800 border border-zinc-800"
+                                ? "bg-amber-500 text-black shadow-lg shadow-amber-500/20 scale-105"
+                                : "bg-zinc-800/50 text-gray-300 border border-zinc-700 hover:border-amber-500/40 hover:bg-zinc-700/50"
                             }`}
                           >
                             {slot}
@@ -330,10 +337,17 @@ export default function Booking() {
                         ))}
                       </div>
                     ) : (
-                      <p className="text-gray-400">لا توجد أوقات متاحة</p>
+                      <div className="text-center py-12 bg-zinc-900/50 rounded-2xl border border-zinc-800">
+                        <Clock className="w-10 h-10 text-gray-600 mx-auto mb-3" />
+                        <p className="text-gray-400">لا توجد أوقات متاحة لهذا اليوم</p>
+                        <p className="text-gray-600 text-sm mt-1">يرجى اختيار يوم آخر</p>
+                      </div>
                     )
                   ) : (
-                    <p className="text-gray-400">اختر تاريخاً أولاً</p>
+                    <div className="text-center py-12 bg-zinc-900/50 rounded-2xl border border-zinc-800">
+                      <Clock className="w-10 h-10 text-gray-600 mx-auto mb-3" />
+                      <p className="text-gray-400">اختر تاريخاً لعرض الأوقات المتاحة</p>
+                    </div>
                   )}
                 </div>
               </div>
