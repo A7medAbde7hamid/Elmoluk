@@ -56,6 +56,7 @@ export const loyaltyRouter = createRouter({
       z.object({
         points: z.number().positive(),
         description: z.string().optional(),
+        bookingId: z.number().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -76,14 +77,15 @@ export const loyaltyRouter = createRouter({
       const available = earned - redeemed;
       
       if (available < input.points) {
-        throw new Error(`Insufficient points. Available: ${available}`);
+        throw new Error(`رصيد غير كاف. النقاط المتاحة: ${available}`);
       }
       
       await db.insert(loyaltyPoints).values({
         userId: ctx.user.id,
         points: input.points,
         type: "redeemed",
-        description: input.description || "Points redeemed",
+        description: input.description || "نقاط مستبدلة",
+        bookingId: input.bookingId,
       });
       
       return { success: true, remaining: available - input.points };

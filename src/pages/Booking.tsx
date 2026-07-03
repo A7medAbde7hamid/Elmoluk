@@ -6,13 +6,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Calendar } from "@/components/ui/calendar";
-import { Clock, User, MapPin, Check } from "lucide-react";
+import { Clock, User, MapPin, Check, Gift } from "lucide-react";
 import { toast } from "sonner";
 import { PaymentMethodSelector } from "@/components/PaymentMethodSelector";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function Booking() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { user } = useAuth();
   const [step, setStep] = useState(searchParams.get("packageId") ? 2 : 1);
   const [selectedService, setSelectedService] = useState<number | null>(() => {
     const sid = searchParams.get("serviceId");
@@ -29,6 +31,7 @@ export default function Booking() {
   const [homeAddress, setHomeAddress] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<"cash" | "card" | "vodafone_cash" | "wallet">("cash");
   const [receiptImage, setReceiptImage] = useState<string | null>(null);
+  const [usePoints, setUsePoints] = useState(false);
 
   const { data: services } = trpc.service.list.useQuery({ isActive: true });
   const { data: barbers } = trpc.barber.list.useQuery({ isActive: true });
@@ -39,6 +42,9 @@ export default function Booking() {
     },
     { enabled: !!selectedDate }
   );
+  const { data: loyalty } = trpc.loyalty.myPoints.useQuery(undefined, {
+    enabled: !!user,
+  });
 
   const createBooking = trpc.booking.create.useMutation({
     onSuccess: () => {
@@ -66,8 +72,15 @@ export default function Booking() {
     },
   });
 
+  const redeemPoints = trpc.loyalty.redeemPoints.useMutation({
+    onError: (error) => {
+      toast.error(error.message);
+    },
+  });
+
   const selectedServiceData = services?.find((s) => s.id === selectedService);
   const selectedBarberData = barbers?.find((b) => b.id === selectedBarber);
+  const canUsePoints = !!user && !!loyalty && loyalty.total >= 2000;
 
   const handleReceiptUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -83,6 +96,8 @@ export default function Booking() {
   const handleSubmit = () => {
     if (!selectedService || !selectedDate || !selectedTime) return;
     
+    const finalAmount = usePoints ? 0 : Number(selectedServiceData?.price ?? 0);
+    
     createBooking.mutate(
       {
         barberId: selectedBarber ?? undefined,
@@ -90,8 +105,8 @@ export default function Booking() {
         bookingDate: selectedDate.toISOString().split("T")[0],
         bookingTime: selectedTime,
         duration: selectedServiceData?.duration || 30,
-        totalAmount: String(selectedServiceData?.price ?? "0"),
-        notes,
+        totalAmount: String(finalAmount),
+        notes: usePoints ? `${notes ? notes + "\n" : ""}[تم استخدام نقاط الولاء]` : notes,
         isHomeService,
         homeAddress: isHomeService ? homeAddress : undefined,
         customerName: customerName || undefined,
@@ -100,12 +115,19 @@ export default function Booking() {
       },
       {
         onSuccess: (bookingResult) => {
+          if (usePoints) {
+            redeemPoints.mutate({
+              points: 2000,
+              description: "استبدال 2000 نقطة للحصول على خدمة مجانية",
+              bookingId: bookingResult.id,
+            });
+          }
           createPayment.mutate({
             bookingId: bookingResult.id,
-            amount: String(selectedServiceData?.price ?? "0"),
+            amount: String(finalAmount),
             paymentMethod,
           });
-          toast.success("تم الحجز بنجاح! تم إرسال كود التحقق");
+          toast.success("تم الحجز بنجاح!");
           navigate("/profile");
         },
         onError: (error) => {
@@ -390,11 +412,18 @@ export default function Booking() {
                   السابق
                 </Button>
                 <Button
-                  onClick={() => setStep(4)}
-                  disabled={!selectedDate || !selectedTime}
+                  onClick={() => {
+                    if (!selectedTime && timeSlots && timeSlots.length > 0) {
+                      setSelectedTime(timeSlots[0]);
+                    }
+                    setStep(4);
+                  }}
+                  disabled={!selectedDate || !timeSlots || timeSlots.length === 0}
                   className="bg-amber-500 hover:bg-amber-600 text-black disabled:opacity-50"
                 >
-                  التالي
+                  {!selectedTime && timeSlots && timeSlots.length > 0
+                    ? "تخطي (اختيار أول وقت)"
+                    : "التالي"}
                 </Button>
               </div>
             </div>
@@ -434,10 +463,16 @@ export default function Booking() {
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-gray-400">السعر</span>
-                  <span className="text-amber-400 font-bold text-xl">
-                    {selectedServiceData?.price} ج.م
+                  <span className={`font-bold text-xl ${usePoints ? 'text-green-400' : 'text-amber-400'}`}>
+                    {usePoints ? 0 : selectedServiceData?.price} ج.م
                   </span>
                 </div>
+                {usePoints && (
+                  <div className="flex items-center justify-between pt-2 border-t border-zinc-800">
+                    <span className="text-gray-400">خصم نقاط الولاء</span>
+                    <span className="text-green-400 font-bold">-{selectedServiceData?.price} ج.م</span>
+                  </div>
+                )}
               </div>
 
               {/* Customer Info */}
@@ -487,10 +522,34 @@ export default function Booking() {
                 </div>
               </div>
 
+              {/* Points Redemption */}
+              {canUsePoints && (
+                <div className="bg-zinc-900 rounded-2xl border border-amber-500/10 p-6">
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={usePoints}
+                      onChange={(e) => setUsePoints(e.target.checked)}
+                      className="w-5 h-5 rounded border-amber-500 text-amber-500"
+                    />
+                    <Gift className="w-5 h-5 text-amber-400" />
+                    <span className="text-white">استخدم 2000 نقطة للحصول على هذه الخدمة مجاناً</span>
+                  </label>
+                  <div className="mt-3 text-sm text-gray-500">
+                    رصيدك الحالي: <span className="text-amber-400 font-bold">{loyalty?.total || 0} نقطة</span>
+                    {usePoints && (
+                      <span className="block mt-1 text-amber-400">
+                        سيتم خصم 2000 نقطة وسيصبح رصيدك {((loyalty?.total || 0) - 2000)} نقطة
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
+
               <PaymentMethodSelector
                 value={paymentMethod}
                 onChange={setPaymentMethod}
-                totalAmount={Number(selectedServiceData?.price ?? 0)}
+                totalAmount={Number(usePoints ? 0 : selectedServiceData?.price ?? 0)}
                 receiptImage={receiptImage}
                 onReceiptUpload={handleReceiptUpload}
               />

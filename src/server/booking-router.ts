@@ -3,7 +3,7 @@ import { TRPCError } from "@trpc/server";
 import { eq, desc, and, or, gte, lte, sql } from "drizzle-orm";
 import { createRouter, publicQuery, authedQuery, adminQuery } from "./middleware.js";
 import { getDb } from "./queries/connection.js";
-import { bookings, barbers, services, packages, users, barberSchedules } from "@db/schema";
+import { bookings, barbers, services, packages, users, barberSchedules, loyaltyPoints } from "@db/schema";
 
 export const bookingRouter = createRouter({
   // List bookings with filters (admin)
@@ -212,6 +212,23 @@ export const bookingRouter = createRouter({
       const db = getDb();
       const { id, ...data } = input;
       await db.update(bookings).set(data).where(eq(bookings.id, id));
+      
+      // Auto-accrue loyalty points when booking is completed
+      if (input.status === "completed") {
+        const booking = await db.query.bookings.findFirst({
+          where: eq(bookings.id, input.id),
+        });
+        if (booking?.userId && booking.totalAmount > 0) {
+          await db.insert(loyaltyPoints).values({
+            userId: booking.userId,
+            points: Math.floor(booking.totalAmount),
+            type: "earned",
+            description: "نقاط مكتسبة من الحجز",
+            bookingId: booking.id,
+          });
+        }
+      }
+      
       return { success: true };
     }),
 
@@ -234,6 +251,21 @@ export const bookingRouter = createRouter({
       await db.update(bookings)
         .set({ status: "completed" })
         .where(eq(bookings.id, input.id));
+      
+      // Auto-accrue loyalty points
+      const booking = await db.query.bookings.findFirst({
+        where: eq(bookings.id, input.id),
+      });
+      if (booking?.userId && booking.totalAmount > 0) {
+        await db.insert(loyaltyPoints).values({
+          userId: booking.userId,
+          points: Math.floor(booking.totalAmount),
+          type: "earned",
+          description: "نقاط مكتسبة من الحجز",
+          bookingId: booking.id,
+        });
+      }
+      
       return { success: true };
     }),
 
