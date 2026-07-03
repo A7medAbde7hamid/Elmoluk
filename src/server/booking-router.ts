@@ -151,7 +151,8 @@ export const bookingRouter = createRouter({
       // Auto-assign barber if not specified
       let barberId = input.barberId;
       if (!barberId) {
-        const dayOfWeek = new Date(input.bookingDate).getDay();
+        const [y, m, d] = input.bookingDate.split("-").map(Number);
+        const dayOfWeek = new Date(Date.UTC(y, m - 1, d)).getUTCDay();
         const availableBarbers = await db.query.barbers.findMany({
           where: and(eq(barbers.isActive, true)),
         });
@@ -353,7 +354,8 @@ export const bookingRouter = createRouter({
     )
     .query(async ({ input }) => {
       const db = getDb();
-      const dayOfWeek = new Date(input.date).getDay();
+      const [y, m, d] = input.date.split("-").map(Number);
+      const dayOfWeek = new Date(Date.UTC(y, m - 1, d)).getUTCDay();
       
       if (input.barberId) {
         return getSlotsForBarber(db, input.barberId, input.date, dayOfWeek);

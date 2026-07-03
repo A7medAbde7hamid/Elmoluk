@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Calendar } from "@/components/ui/calendar";
+import { format } from "date-fns";
 import { Clock, User, MapPin, Check, Gift } from "lucide-react";
 import { toast } from "sonner";
 import { PaymentMethodSelector } from "@/components/PaymentMethodSelector";
@@ -38,7 +39,7 @@ export default function Booking() {
   const { data: timeSlots } = trpc.booking.getTimeSlots.useQuery(
     {
       barberId: selectedBarber ?? undefined,
-      date: selectedDate?.toISOString().split("T")[0] || "",
+      date: selectedDate ? format(selectedDate, "yyyy-MM-dd") : "",
     },
     { enabled: !!selectedDate }
   );
@@ -102,7 +103,7 @@ export default function Booking() {
       {
         barberId: selectedBarber ?? undefined,
         serviceId: selectedService,
-        bookingDate: selectedDate.toISOString().split("T")[0],
+        bookingDate: format(selectedDate, "yyyy-MM-dd"),
         bookingTime: selectedTime,
         duration: selectedServiceData?.duration || 30,
         totalAmount: String(finalAmount),
