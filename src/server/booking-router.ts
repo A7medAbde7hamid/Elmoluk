@@ -357,6 +357,26 @@ export const bookingRouter = createRouter({
       const [y, m, d] = input.date.split("-").map(Number);
       const dayOfWeek = new Date(Date.UTC(y, m - 1, d)).getUTCDay();
       
+      // Auto-seed default schedules if none exist
+      const existingSchedules = await db.query.barberSchedules.findFirst();
+      if (!existingSchedules) {
+        const allBarbers = await db.query.barbers.findMany({
+          where: eq(barbers.isActive, true),
+        });
+        for (const barber of allBarbers) {
+          for (let day = 0; day < 7; day++) {
+            if (day === 5) continue; // Friday off
+            await db.insert(barberSchedules).values({
+              barberId: barber.id,
+              dayOfWeek: day,
+              startTime: "09:00",
+              endTime: "21:00",
+              isDayOff: false,
+            });
+          }
+        }
+      }
+      
       if (input.barberId) {
         return getSlotsForBarber(db, input.barberId, input.date, dayOfWeek);
       }
