@@ -10,17 +10,24 @@ const allowedOrigins = ["http://localhost:5173", "http://localhost:4173", "https
 if (process.env.CORS_ORIGIN) allowedOrigins.push(process.env.CORS_ORIGIN);
 app.use(cors({ origin: allowedOrigins, credentials: true }));
 
-app.use("/api/trpc/*", async (c) => {
-  const method = c.req.method;
-  const ct = c.req.header("content-type") || "none";
-  let body: any = null;
-  let bodyStr = "unread";
+app.get("/api/trpc/debug", async (c) => c.json({ ok: true, message: "GET works" }));
+
+app.post("/api/trpc/debug", async (c) => {
+  const contentType = c.req.header("content-type") || "none";
+  let bodyText = "unable to read";
   try {
-    bodyStr = await c.req.raw.clone().text();
-  } catch {
-    bodyStr = "error reading body";
+    bodyText = await c.req.raw.clone().text();
+  } catch (e: any) {
+    bodyText = "error: " + e.message;
   }
-  console.log("[trpc]", method, c.req.path, "ct:", ct, "body:", bodyStr.substring(0, 500));
+  return c.json({
+    contentType,
+    bodyLength: bodyText.length,
+    bodyPreview: bodyText.substring(0, 500),
+  });
+});
+
+app.use("/api/trpc/*", async (c) => {
   return fetchRequestHandler({
     endpoint: "/api/trpc",
     req: c.req.raw,
