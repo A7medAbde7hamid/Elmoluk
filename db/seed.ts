@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { getDb } from "../src/server/queries/connection";
-import * as schema from "./schema";
+import * as schema from "./schema.js";
 import bcrypt from "bcryptjs";
 
 async function seed() {

@@ -1,2 +1,3 @@
-export type * from "../db/schema";
-export * from "./errors";
+export type * from "../db/schema.js";
+
+export * from "./errors.js";
