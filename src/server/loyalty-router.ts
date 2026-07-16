@@ -2,7 +2,7 @@ import { z } from "zod";
 import { eq, desc, sql } from "drizzle-orm";
 import { createRouter, adminQuery, authedQuery } from "./middleware.js";
 import { getDb } from "./queries/connection.js";
-import { loyaltyPoints } from "@db/schema";
+import { loyaltyPoints } from "../../db/schema.js";
 
 function calcBalance(points: { type: string | null; points: number }[]) {
   const earned = points.filter((p) => p.type === "earned").reduce((s, p) => s + p.points, 0);

@@ -2,7 +2,7 @@ import { z } from "zod";
 import { eq, desc } from "drizzle-orm";
 import { createRouter, adminQuery, authedQuery } from "./middleware.js";
 import { getDb } from "./queries/connection.js";
-import { notifications } from "@db/schema";
+import { notifications } from "../../db/schema.js";
 
 export const notificationRouter = createRouter({
   // Get user's notifications

@@ -2,7 +2,7 @@ import { z } from "zod";
 import { eq, desc, sql } from "drizzle-orm";
 import { createRouter, adminQuery, authedQuery } from "./middleware.js";
 import { getDb } from "./queries/connection.js";
-import { orders, orderItems, products } from "@db/schema";
+import { orders, orderItems, products } from "../../db/schema.js";
 
 export const orderRouter = createRouter({
   // List orders (admin)

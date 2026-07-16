@@ -2,7 +2,7 @@ import { z } from "zod";
 import { eq, desc, sum, count, and, sql } from "drizzle-orm";
 import { createRouter, adminQuery } from "./middleware.js";
 import { getDb } from "./queries/connection.js";
-import { bookings, users, siteVisits, payments, affiliates } from "@db/schema";
+import { bookings, users, siteVisits, payments, affiliates } from "../../db/schema.js";
 
 export const adminRouter = createRouter({
   // Get live statistics

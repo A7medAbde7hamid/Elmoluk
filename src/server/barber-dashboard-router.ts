@@ -3,7 +3,7 @@ import { z } from "zod";
 import { eq, desc, and } from "drizzle-orm";
 import { createRouter, barberQuery, adminQuery } from "./middleware.js";
 import { getDb } from "./queries/connection.js";
-import { bookings, barbers, services, users } from "@db/schema";
+import { bookings, barbers, services, users } from "../../db/schema.js";
 
 export const barberDashboardRouter = createRouter({
   // Get the authenticated barber's info

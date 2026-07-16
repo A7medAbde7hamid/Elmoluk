@@ -2,7 +2,7 @@ import { z } from "zod";
 import { eq, desc, and } from "drizzle-orm";
 import { createRouter, publicQuery, adminQuery, authedQuery } from "./middleware.js";
 import { getDb } from "./queries/connection.js";
-import { reviews, barbers, bookings } from "@db/schema";
+import { reviews, barbers, bookings } from "../../db/schema.js";
 
 export const reviewRouter = createRouter({
   // List reviews for a barber

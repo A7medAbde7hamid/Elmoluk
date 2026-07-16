@@ -3,7 +3,7 @@ import { TRPCError } from "@trpc/server";
 import { eq, desc, and, or, gte, lte, sql } from "drizzle-orm";
 import { createRouter, publicQuery, authedQuery, adminQuery } from "./middleware.js";
 import { getDb } from "./queries/connection.js";
-import { bookings, barbers, services, packages, users, barberSchedules, loyaltyPoints } from "@db/schema";
+import { bookings, barbers, services, packages, users, barberSchedules, loyaltyPoints } from "../../db/schema.js";
 import { sendWhatsAppMessage } from "./lib/notifications.js";
 
 export const bookingRouter = createRouter({

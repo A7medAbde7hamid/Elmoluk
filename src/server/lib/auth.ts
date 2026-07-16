@@ -2,7 +2,7 @@ import * as jose from "jose";
 import * as cookie from "cookie";
 import { TRPCError } from "@trpc/server";
 import { env } from "./env.js";
-import { Session } from "@contracts/constants";
+import { Session } from "../../../contracts/constants.js";
 import { findUserById } from "../queries/users.js";
 
 export type SessionPayload = {

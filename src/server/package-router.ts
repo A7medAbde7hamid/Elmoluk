@@ -2,7 +2,7 @@ import { z } from "zod";
 import { eq, desc } from "drizzle-orm";
 import { createRouter, publicQuery, adminQuery } from "./middleware.js";
 import { getDb } from "./queries/connection.js";
-import { packages, packageServices, services } from "@db/schema";
+import { packages, packageServices, services } from "../../db/schema.js";
 
 export const packageRouter = createRouter({
   // List all packages (public)

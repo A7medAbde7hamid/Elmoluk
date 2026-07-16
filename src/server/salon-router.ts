@@ -3,7 +3,7 @@ import { z } from "zod";
 import { eq, desc, sql } from "drizzle-orm";
 import { createRouter, publicQuery, adminQuery } from "./middleware.js";
 import { getDb } from "./queries/connection.js";
-import { salonSettings, holidays, branches, activityLogs, bookings, barbers, users, products } from "@db/schema";
+import { salonSettings, holidays, branches, activityLogs, bookings, barbers, users, products } from "../../db/schema.js";
 
 export const salonRouter = createRouter({
   // Get all settings (public)

@@ -4,7 +4,7 @@ import { eq, desc, like, and } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { createRouter, publicQuery, adminQuery } from "./middleware.js";
 import { getDb } from "./queries/connection.js";
-import { barbers, barberSchedules, users } from "@db/schema";
+import { barbers, barberSchedules, users } from "../../db/schema.js";
 
 export const barberRouter = createRouter({
   // List all barbers (public)
