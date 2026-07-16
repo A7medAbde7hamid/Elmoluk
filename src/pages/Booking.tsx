@@ -54,9 +54,12 @@ export default function Booking() {
 
   const createBooking = trpc.booking.create.useMutation({
     onSuccess: (data) => {
-      toast.success("تم الحجز بنجاح! تم إرسال كود التحقق");
       setPendingBookingId(data.id);
       setOtpDialogOpen(true);
+      if (usePoints) {
+        redeemPoints.mutate({ points: 2000, description: "استبدال 2000 نقطة للحصول على خدمة مجانية", bookingId: data.id });
+      }
+      createPayment.mutate({ bookingId: data.id, amount: String(finalAmount), paymentMethod, receiptImage: receiptImage || undefined });
     },
     onError: (error) => {
       toast.error(error.message);
@@ -93,12 +96,14 @@ export default function Booking() {
     },
     onError: (error) => {
       toast.error(error.message || "كود التحقق غير صحيح");
+      setOtpCode(["", "", "", ""]);
     },
   });
 
   const selectedServiceData = services?.find((s) => s.id === selectedService);
   const selectedBarberData = barbers?.find((b) => b.id === selectedBarber);
   const canUsePoints = !!user && !!loyalty && loyalty.total >= 2000;
+  const finalAmount = usePoints ? 0 : Number(selectedServiceData?.price ?? 0);
 
   const handleReceiptUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -114,12 +119,12 @@ export default function Booking() {
   const handleSubmit = () => {
     if (!selectedService || !selectedDate || !selectedTime) return;
     
-    const finalAmount = usePoints ? 0 : Number(selectedServiceData?.price ?? 0);
-    
     createBooking.mutate(
       {
+        userId: user?.id,
         barberId: selectedBarber ?? undefined,
         serviceId: selectedService,
+        packageId: searchParams.get("packageId") ? Number(searchParams.get("packageId")) : undefined,
         bookingDate: format(selectedDate, "yyyy-MM-dd"),
         bookingTime: selectedTime,
         duration: selectedServiceData?.duration || 30,
@@ -130,28 +135,6 @@ export default function Booking() {
         customerName: customerName || undefined,
         customerPhone: customerPhone || undefined,
         customerEmail: customerEmail || undefined,
-      },
-      {
-        onSuccess: (bookingResult) => {
-          if (usePoints) {
-            redeemPoints.mutate({
-              points: 2000,
-              description: "استبدال 2000 نقطة للحصول على خدمة مجانية",
-              bookingId: bookingResult.id,
-            });
-          }
-          createPayment.mutate({
-            bookingId: bookingResult.id,
-            amount: String(finalAmount),
-            paymentMethod,
-            receiptImage: receiptImage || undefined,
-          });
-          toast.success("تم الحجز بنجاح!");
-          navigate("/profile");
-        },
-        onError: (error) => {
-          toast.error(error.message);
-        },
       }
     );
   };
@@ -596,12 +579,12 @@ export default function Booking() {
       </div>
 
       {/* OTP Verification Dialog */}
-      <Dialog open={otpDialogOpen} onOpenChange={(o) => { if (!o) setOtpDialogOpen(false); }}>
+      <Dialog open={otpDialogOpen} onOpenChange={(o) => { if (!o) { setOtpDialogOpen(false); setOtpCode(["", "", "", ""]); } }}>
         <DialogContent className="bg-zinc-900 border-amber-500/20 text-white max-w-sm">
           <DialogHeader>
             <DialogTitle className="text-center">تأكيد الحجز</DialogTitle>
             <DialogDescription className="text-center text-gray-400">
-              تم إرسال كود التحقق عبر واتساب. يرجى إدخال الكود
+              {pendingBookingId ? `كود التحقق: ${createBooking.data?.otpCode || "تم إرساله عبر واتساب"}` : "يرجى إدخال كود التحقق"}
             </DialogDescription>
           </DialogHeader>
           <div className="flex justify-center gap-3 my-6" dir="ltr">
@@ -610,6 +593,7 @@ export default function Booking() {
                 key={i}
                 type="text"
                 maxLength={1}
+                autoFocus={i === 0}
                 value={digit}
                 onChange={(e) => {
                   const val = e.target.value.replace(/\D/g, "");

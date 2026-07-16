@@ -5,7 +5,7 @@ import { useState, useRef, useEffect } from "react";
 export function NotificationBell() {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const { data: notifications, isLoading } = trpc.notification.myNotifications.useQuery();
+  const { data: notifications, isLoading, isError } = trpc.notification.myNotifications.useQuery();
   const utils = trpc.useUtils();
   const markAsRead = trpc.notification.markAsRead.useMutation();
   const markAllRead = trpc.notification.markAllRead.useMutation();
@@ -76,14 +76,20 @@ export function NotificationBell() {
               </div>
             )}
 
-            {!isLoading && notifications?.length === 0 && (
+            {!isLoading && isError && (
+              <div className="p-8 text-center text-gray-500">
+                <p className="text-sm">فشل تحميل الإشعارات</p>
+              </div>
+            )}
+
+            {!isLoading && !isError && notifications?.length === 0 && (
               <div className="p-8 text-center text-gray-500">
                 <Bell className="w-8 h-8 mx-auto mb-2 opacity-50" />
                 <p className="text-sm">لا توجد إشعارات</p>
               </div>
             )}
 
-            {notifications?.map((notif) => (
+            {!isError && notifications?.map((notif) => (
               <div
                 key={notif.id}
                 className={`px-4 py-3 border-b border-amber-500/5 hover:bg-zinc-800/50 transition-colors ${

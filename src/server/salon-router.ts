@@ -136,6 +136,7 @@ export const salonRouter = createRouter({
     .input(
       z.object({
         limit: z.number().default(50),
+        offset: z.number().default(0),
       }).optional()
     )
     .query(async ({ input }) => {
@@ -143,6 +144,7 @@ export const salonRouter = createRouter({
       return db.query.activityLogs.findMany({
         orderBy: [desc(activityLogs.createdAt)],
         limit: input?.limit,
+        offset: input?.offset,
       });
     }),
 
