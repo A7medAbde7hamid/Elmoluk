@@ -40,11 +40,10 @@ export const adminRouter = createRouter({
     const pendingBookings = pendingBookingsResult[0]?.total || 0;
 
     // Revenue by day (last 30 days)
-    type RevenueRow = { date: string; revenue: number };
-    const revenueByDayResult = await db.execute(
+    type RevenueRow = { date: string; revenue: number | string };
+    const revenueByDayResult = (await db.execute(
       sql`SELECT DATE(created_at) as date, COALESCE(SUM(amount), 0) as revenue FROM payments WHERE status = 'completed' AND created_at >= DATE_SUB(CURDATE(), INTERVAL 30 DAY) GROUP BY DATE(created_at) ORDER BY date ASC`
-    );
-    const revenueByDayRows = revenueByDayResult.rows as RevenueRow[];
+    )) as unknown as RevenueRow[];
     
     // Booking counts by status
     type BookingStatusRow = { status: string; count: number };
@@ -60,8 +59,8 @@ export const adminRouter = createRouter({
       totalBookings,
       todayBookings,
       pendingBookings,
-      revenueByDay: Array.isArray(revenueByDayRows) ? revenueByDayRows.map((r) => ({ date: r.date, revenue: Number(r.revenue) })) : [],
-      bookingByStatus: Array.isArray(bookingByStatusResult.rows) ? (bookingByStatusResult.rows as BookingStatusRow[]).map((r) => ({ status: r.status, count: Number(r.count) })) : [],
+      revenueByDay: Array.isArray(revenueByDayResult) ? revenueByDayResult.map((r) => ({ date: r.date, revenue: Number(r.revenue) })) : [],
+      bookingByStatus: Array.isArray(bookingByStatusResult) ? (bookingByStatusResult as unknown as BookingStatusRow[]).map((r) => ({ status: r.status, count: Number(r.count) })) : [],
     };
   }),
 

@@ -8,7 +8,7 @@ import * as relations from "@db/relations";
 const fullSchema = { ...schema, ...relations };
 
 function createPool() {
-  const opts: mysql.PoolOptions = { uri: env.databaseUrl, waitForConnections: true, connectionLimit: 5 };
+  const opts: mysql.PoolOptions = { uri: env.databaseUrl, waitForConnections: true, connectionLimit: 5, };
 
   if (env.databaseCa) {
     opts.ssl = { ca: env.databaseCa };
@@ -27,12 +27,17 @@ function createPool() {
   return mysql.createPool(opts);
 }
 
-let instance: ReturnType<typeof drizzle<typeof fullSchema>>;
+let pool: mysql.Pool;
+let instance: ReturnType<typeof drizzle>;
+
+function getPool() {
+  if (!pool) pool = createPool();
+  return pool;
+}
 
 export function getDb() {
   if (!instance) {
-    const pool = createPool();
-    instance = drizzle(pool, { mode: 'default', schema: fullSchema });
+    instance = drizzle(getPool(), { mode: "default", schema: fullSchema });
   }
   return instance;
 }
