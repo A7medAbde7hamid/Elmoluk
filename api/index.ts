@@ -28,12 +28,61 @@ app.post("/api/trpc/debug", async (c) => {
 });
 
 app.use("/api/trpc/*", async (c) => {
-  return fetchRequestHandler({
-    endpoint: "/api/trpc",
-    req: c.req.raw,
-    router: appRouter,
-    createContext,
-  });
+  const url = c.req.url;
+  const method = c.req.method;
+  let bodyText = "";
+
+  if (method === "POST") {
+    bodyText = await c.req.raw.clone().text();
+  }
+
+  const req = method === "POST"
+    ? new Request(c.req.raw.url, { method, headers: c.req.raw.headers, body: bodyText })
+    : c.req.raw;
+
+  let response;
+  try {
+    response = await fetchRequestHandler({
+      endpoint: "/api/trpc",
+      req,
+      router: appRouter,
+      createContext,
+    });
+  } catch (e: any) {
+    return new Response(JSON.stringify({
+      error: "tRPC handler threw",
+      message: e.message,
+      url,
+      method,
+      bodyLength: bodyText.length,
+      bodyPreview: bodyText.substring(0, 800),
+    }), {
+      status: 500,
+      headers: { "content-type": "application/json" },
+    });
+  }
+
+  if (response.status >= 400 && method === "POST") {
+    const cloned = response.clone();
+    let responseBody = "unable to read";
+    try {
+      responseBody = await cloned.text();
+    } catch { }
+    let trpcError;
+    try { trpcError = JSON.parse(responseBody); } catch { trpcError = responseBody; }
+    return new Response(JSON.stringify({
+      trpcError,
+      url,
+      method,
+      bodyLength: bodyText.length,
+      bodyPreview: bodyText.substring(0, 800),
+    }), {
+      status: response.status,
+      headers: { "content-type": "application/json" },
+    });
+  }
+
+  return response;
 });
 
 app.all("/api/*", (c) => c.json({ error: "Not Found" }, 404));
