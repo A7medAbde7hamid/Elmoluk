@@ -2,19 +2,21 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
 
-async function loadModules() {
-  const [router, ctx] = await Promise.all([
-    import("../src/server/router.js"),
-    import("../src/server/context.js"),
-  ]);
-  return { appRouter: router.appRouter, createContext: ctx.createContext };
-}
+let appRouter: any, createContext: any;
+let initError: string | null = null;
 
-let appRouter: any;
-let createContext: any;
-loadModules().then(m => { appRouter = m.appRouter; createContext = m.createContext; }).catch(err => {
-  console.error("[api] init error:", err);
-});
+try {
+  const mod = await import("../src/server/router.js");
+  appRouter = mod.appRouter;
+} catch (e: any) {
+  initError = "[router] " + (e?.message || String(e));
+}
+try {
+  const mod = await import("../src/server/context.js");
+  createContext = mod.createContext;
+} catch (e: any) {
+  initError = (initError ? initError + " | " : "") + "[ctx] " + (e?.message || String(e));
+}
 
 const app = new Hono();
 
@@ -23,9 +25,8 @@ if (process.env.CORS_ORIGIN) allowedOrigins.push(process.env.CORS_ORIGIN);
 app.use(cors({ origin: allowedOrigins, credentials: true }));
 
 app.use("/api/trpc/*", async (c) => {
-  if (!appRouter || !createContext) {
-    return c.json({ error: "Modules not loaded yet" }, 503);
-  }
+  if (initError) return c.json({ error: "Init failed", details: initError }, 500);
+  if (!appRouter || !createContext) return c.json({ error: "Modules not loaded" }, 503);
   return fetchRequestHandler({
     endpoint: "/api/trpc",
     req: c.req.raw,
