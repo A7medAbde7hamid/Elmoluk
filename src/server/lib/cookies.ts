@@ -9,7 +9,7 @@ export function getSessionCookieOptions(headers: Headers) {
   return {
     httpOnly: true,
     path: "/",
-    sameSite: localhost ? "Lax" : "None",
+    sameSite: (localhost ? "lax" : "none") as "lax" | "none",
     secure: !localhost,
   };
 }

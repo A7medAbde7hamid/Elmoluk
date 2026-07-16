@@ -28,7 +28,7 @@ function createPool() {
 }
 
 let pool: mysql.Pool;
-let instance: ReturnType<typeof drizzle>;
+let instance: any;
 
 function getPool() {
   if (!pool) pool = createPool();
