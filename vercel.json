@@ -7,13 +7,6 @@
   },
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/index" },
-    { "source": "/assets/(.*)", "destination": "/assets/$1" },
-    { "source": "/uploads/(.*)", "destination": "/uploads/$1" },
-    { "source": "/icons/(.*)", "destination": "/icons/$1" },
-    { "source": "/manifest.json", "destination": "/manifest.json" },
-    { "source": "/sw.js", "destination": "/sw.js" },
-    { "source": "/robots.txt", "destination": "/robots.txt" },
-    { "source": "/sitemap.xml", "destination": "/sitemap.xml" },
-    { "source": "/(.*)", "destination": "/index.html" }
+    { "source": "/((?!.*\\..*).*)", "destination": "/index.html" }
   ]
 }
