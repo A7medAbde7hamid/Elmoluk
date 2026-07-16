@@ -6,7 +6,7 @@ import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
 import { appRouter } from "./router.js";
 import { createContext } from "./context.js";
 import { readFile } from "fs/promises";
-import { join } from "path";
+import { resolve } from "path";
 
 const app = new Hono<{ Bindings: HttpBindings }>();
 
@@ -16,7 +16,9 @@ app.use(cors({ origin: allowedOrigins, credentials: true }));
 app.use(bodyLimit({ maxSize: 50 * 1024 * 1024 }));
 app.get("/uploads/*", async (c) => {
   try {
-    const filePath = join(process.cwd(), "public", c.req.path);
+    const publicDir = resolve(process.cwd(), "public");
+    const filePath = resolve(publicDir, "." + c.req.path);
+    if (!filePath.startsWith(publicDir)) return c.notFound();
     const content = await readFile(filePath);
     const ext = filePath.split(".").pop()?.toLowerCase() || "";
     const mime: Record<string, string> = { png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", gif: "image/gif", webp: "image/webp" };

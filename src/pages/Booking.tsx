@@ -584,7 +584,7 @@ export default function Booking() {
           <DialogHeader>
             <DialogTitle className="text-center">تأكيد الحجز</DialogTitle>
             <DialogDescription className="text-center text-gray-400">
-              {pendingBookingId ? `كود التحقق: ${createBooking.data?.otpCode || "تم إرساله عبر واتساب"}` : "يرجى إدخال كود التحقق"}
+              {pendingBookingId ? "تم إرسال كود التحقق عبر واتساب" : "يرجى إدخال كود التحقق"}
             </DialogDescription>
           </DialogHeader>
           <div className="flex justify-center gap-3 my-6" dir="ltr">

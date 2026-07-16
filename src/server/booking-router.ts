@@ -4,7 +4,7 @@ import { eq, desc, and, or, gte, lte, sql } from "drizzle-orm";
 import { createRouter, publicQuery, authedQuery, adminQuery } from "./middleware.js";
 import { getDb } from "./queries/connection.js";
 import { bookings, barbers, services, packages, users, barberSchedules, loyaltyPoints } from "@db/schema";
-import { sendWhatsAppMessage, getWhatsAppLink } from "./lib/notifications.js";
+import { sendWhatsAppMessage } from "./lib/notifications.js";
 
 export const bookingRouter = createRouter({
   // List bookings with filters (admin)
@@ -195,16 +195,24 @@ export const bookingRouter = createRouter({
       
       // Notify via WhatsApp
       if (input.customerPhone) {
-        const barberName = null;
         const msg = `مرحباً ${input.customerName || "عميلنا العزيز"} 👋\nتم استلام حجزك في صالون الملوك ✅\nالتاريخ: ${input.bookingDate}\nالوقت: ${input.bookingTime}\nكود التحقق: ${otpCode}\nسيتم تأكيد الحجز قريباً.`;
         sendWhatsAppMessage(input.customerPhone, msg);
       }
       
       return { 
         id: bookingId, 
-        ...input, 
         barberId,
-        otpCode,
+        serviceId: input.serviceId,
+        packageId: input.packageId,
+        bookingDate: input.bookingDate,
+        bookingTime: input.bookingTime,
+        duration: input.duration,
+        totalAmount: input.totalAmount,
+        notes: input.notes,
+        isHomeService: input.isHomeService,
+        homeAddress: input.homeAddress,
+        customerName: input.customerName,
+        customerPhone: input.customerPhone,
         status: "pending" as const,
       };
     }),

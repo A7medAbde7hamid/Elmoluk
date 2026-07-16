@@ -7,8 +7,8 @@ async function seed() {
   const db = getDb();
   console.log("Seeding database...");
 
-  const adminPw = await bcrypt.hash("admin123", 10);
-  const barberPw = await bcrypt.hash("barber123", 10);
+  const adminPw = await bcrypt.hash(process.env.ADMIN_DEFAULT_PASSWORD || "admin123", 10);
+  const barberPw = await bcrypt.hash(process.env.BARBER_DEFAULT_PASSWORD || "barber123", 10);
 
   await db.insert(schema.users).values({
     name: "مدير الصالون",
