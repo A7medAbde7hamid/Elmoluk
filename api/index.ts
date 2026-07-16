@@ -11,6 +11,16 @@ if (process.env.CORS_ORIGIN) allowedOrigins.push(process.env.CORS_ORIGIN);
 app.use(cors({ origin: allowedOrigins, credentials: true }));
 
 app.use("/api/trpc/*", async (c) => {
+  const method = c.req.method;
+  const ct = c.req.header("content-type") || "none";
+  let body: any = null;
+  let bodyStr = "unread";
+  try {
+    bodyStr = await c.req.raw.clone().text();
+  } catch {
+    bodyStr = "error reading body";
+  }
+  console.log("[trpc]", method, c.req.path, "ct:", ct, "body:", bodyStr.substring(0, 500));
   return fetchRequestHandler({
     endpoint: "/api/trpc",
     req: c.req.raw,
