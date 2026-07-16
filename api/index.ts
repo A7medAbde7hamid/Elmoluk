@@ -1,22 +1,8 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
-
-let appRouter: any, createContext: any;
-let initError: string | null = null;
-
-try {
-  const mod = await import("../src/server/router.js");
-  appRouter = mod.appRouter;
-} catch (e: any) {
-  initError = "[router] " + (e?.message || String(e));
-}
-try {
-  const mod = await import("../src/server/context.js");
-  createContext = mod.createContext;
-} catch (e: any) {
-  initError = (initError ? initError + " | " : "") + "[ctx] " + (e?.message || String(e));
-}
+import { appRouter } from "../src/server/router.js";
+import { createContext } from "../src/server/context.js";
 
 const app = new Hono();
 
@@ -25,8 +11,6 @@ if (process.env.CORS_ORIGIN) allowedOrigins.push(process.env.CORS_ORIGIN);
 app.use(cors({ origin: allowedOrigins, credentials: true }));
 
 app.use("/api/trpc/*", async (c) => {
-  if (initError) return c.json({ error: "Init failed", details: initError }, 500);
-  if (!appRouter || !createContext) return c.json({ error: "Modules not loaded" }, 503);
   return fetchRequestHandler({
     endpoint: "/api/trpc",
     req: c.req.raw,
