@@ -47,3 +47,5 @@ coverage/
 
 # Uploaded assets
 public/uploads/
+
+.env.check
