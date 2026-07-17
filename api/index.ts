@@ -18,7 +18,6 @@ app.use("/api/trpc/*", async (c) => {
 
   const body: string | undefined = method === "GET" || method === "HEAD" ? undefined : await c.req.text();
   const req = new Request(url, { method, headers, body });
-  if (body) console.log("BODY:", JSON.stringify(body), "LEN:", body.length, "FIRST:", body.charCodeAt(0), "SEC:", body.charCodeAt(1));
 
   return fetchRequestHandler({
     endpoint: "/api/trpc",
