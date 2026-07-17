@@ -18,9 +18,9 @@ export const users = mysqlTable("users", {
   password: text("password"),
   email: text("email"),
   avatar: text("avatar"),
-  role: text("role", { enum: ["user", "admin", "manager", "barber"] }).default("user").notNull(),
+  role: varchar("role", { length: 20 }).default("user").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().notNull().onUpdateNow(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
   lastSignInAt: timestamp("lastSignInAt").defaultNow().notNull(),
 });
 
@@ -38,13 +38,13 @@ export const barbers = mysqlTable("barbers", {
   bio: text("bio"),
   phone: text("phone"),
   email: text("email"),
-  salaryType: text("salary_type", { enum: ["hourly", "fixed"] }).default("fixed").notNull(),
+  salaryType: varchar("salary_type", { length: 10 }).default("fixed").notNull(),
   salaryAmount: double("salary_amount").default(0).notNull(),
   rating: double("rating").default(5).notNull(),
   totalReviews: int("total_reviews").default(0).notNull(),
   isActive: boolean("is_active").default(true).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull().onUpdateNow(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export type Barber = typeof barbers.$inferSelect;
@@ -76,7 +76,7 @@ export const services = mysqlTable("services", {
   isHomeService: boolean("is_home_service").default(false).notNull(),
   homeServiceFee: double("home_service_fee").default(0).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull().onUpdateNow(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export type Service = typeof services.$inferSelect;
@@ -131,7 +131,7 @@ export const bookings = mysqlTable("bookings", {
   otpVerified: boolean("otp_verified").default(false).notNull(),
   otpAttempts: int("otp_attempts").default(0).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull().onUpdateNow(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export type Booking = typeof bookings.$inferSelect;
@@ -165,7 +165,7 @@ export const products = mysqlTable("products", {
   category: text("category").notNull(),
   isActive: boolean("is_active").default(true).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull().onUpdateNow(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export type Product = typeof products.$inferSelect;
@@ -180,7 +180,7 @@ export const orders = mysqlTable("orders", {
   shippingAddress: text("shipping_address"),
   paymentStatus: text("payment_status", { enum: ["pending", "paid", "refunded"] }).default("pending").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull().onUpdateNow(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export type Order = typeof orders.$inferSelect;
@@ -221,7 +221,7 @@ export const wallets = mysqlTable("wallets", {
   userId: int("user_id").notNull().unique(),
   balance: double("balance").default(0).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull().onUpdateNow(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export type Wallet = typeof wallets.$inferSelect;
@@ -310,7 +310,7 @@ export const salonSettings = mysqlTable("salon_settings", {
   key: varchar("key", { length: 100 }).notNull().unique(),
   value: text("value"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull().onUpdateNow(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export type SalonSetting = typeof salonSettings.$inferSelect;
