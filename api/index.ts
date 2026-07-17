@@ -10,6 +10,12 @@ const allowedOrigins = ["http://localhost:5173", "http://localhost:4173", "https
 if (process.env.CORS_ORIGIN) allowedOrigins.push(process.env.CORS_ORIGIN);
 app.use(cors({ origin: allowedOrigins, credentials: true }));
 
+app.post("/api/debug/echo", async (c) => {
+  const text = await c.req.text();
+  console.log("DEBUG BODY:", text);
+  return c.json({ received: text });
+});
+
 app.use("/api/trpc/*", async (c) => {
   return fetchRequestHandler({
     endpoint: "/api/trpc",
