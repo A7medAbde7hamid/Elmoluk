@@ -27,6 +27,19 @@ app.post("/api/trpc/debug", async (c) => {
   });
 });
 
+app.get("/api/trpc/dbcheck", async (c) => {
+  try {
+    const { getDb } = await import("../src/server/queries/connection.js");
+    const db = getDb();
+    const rawSql = db.$client;
+    const [rows] = await rawSql.execute("SHOW TABLES");
+    const tables = (rows as any[]).map((r: any) => Object.values(r)[0]);
+    return c.json({ ok: true, tables });
+  } catch (e: any) {
+    return c.json({ ok: false, error: e.message, stack: e.stack?.split("\n").slice(0, 5).join("\n") }, 500);
+  }
+});
+
 app.use("/api/trpc/*", async (c) => {
   const url = c.req.url;
   const method = c.req.method;
