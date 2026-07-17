@@ -8,20 +8,15 @@ import * as relations from "../../../db/relations.js";
 const fullSchema = { ...schema, ...relations };
 
 function createPool() {
-  const opts: mysql.PoolOptions = { uri: env.databaseUrl, waitForConnections: true, connectionLimit: 5, };
+  const opts: mysql.PoolOptions = {
+    uri: env.databaseUrl,
+    waitForConnections: true,
+    connectionLimit: 5,
+    ssl: { rejectUnauthorized: true },
+  };
 
   if (env.databaseCa) {
     opts.ssl = { ca: env.databaseCa };
-  }
-
-  const parsed = new URL(env.databaseUrl);
-  if (parsed.searchParams.has("ssl")) {
-    try {
-      const sslFromUrl = JSON.parse(parsed.searchParams.get("ssl")!);
-      opts.ssl = typeof opts.ssl === "object" && opts.ssl !== null
-        ? { ...opts.ssl, ...sslFromUrl }
-        : sslFromUrl;
-    } catch { /* ignore invalid JSON */ }
   }
 
   return mysql.createPool(opts);
