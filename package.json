@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build && esbuild src/server/app.ts --platform=node --bundle --format=esm --outfile=dist/server.js --banner:js=\"import { createRequire } from 'module';const require = createRequire(import.meta.url);\"",
-    "build:vercel": "vite build && cp -r dist/* .",
+    "build:vercel": "drizzle-kit migrate && vite build && cp -r dist/* .",
     "lint": "eslint .",
     "preview": "vite preview",
     "check": "tsc -b",
