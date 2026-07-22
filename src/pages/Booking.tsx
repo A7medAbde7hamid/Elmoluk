@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from "react-router";
 import { trpc } from "@/providers/trpc";
 import { Layout } from "@/components/Layout";
 import SEO from "@/components/SEO";
+import BreadcrumbSchema from "@/components/BreadcrumbSchema";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -139,6 +140,7 @@ export default function Booking() {
   return (
     <Layout>
       <SEO title="احجز موعدك" description="احجز موعدك في صالون الملوك بسهولة. اختر الخدمة والحلاق والتاريخ المناسب لك." path="/booking" />
+      <BreadcrumbSchema items={[{ name: "الرئيسية", path: "/" }, { name: "حجز موعد", path: "/booking" }]} />
       <div className="min-h-screen bg-black pt-24 pb-20">
         <div className="max-w-4xl mx-auto px-4">
           <div className="text-center mb-10">

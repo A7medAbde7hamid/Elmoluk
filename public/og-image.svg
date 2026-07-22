@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" fill="#000"/>
+  <rect width="1200" height="630" fill="url(#g)"/>
+  <defs>
+    <radialGradient id="g" cx="50%" cy="50%" r="60%">
+      <stop offset="0%" stop-color="rgba(251,191,36,0.15)"/>
+      <stop offset="100%" stop-color="rgba(0,0,0,0)"/>
+    </radialGradient>
+  </defs>
+  <text x="600" y="250" font-family="Tajawal, Arial, sans-serif" font-size="80" font-weight="900" fill="#f59e0b" text-anchor="middle">صالون الملوك</text>
+  <text x="600" y="240" font-family="Tajawal, Arial, sans-serif" font-size="40" font-weight="700" fill="#f59e0b" text-anchor="middle" transform="translate(0,80)">El Moluok Salon</text>
+  <text x="600" y="410" font-family="Tajawal, Arial, sans-serif" font-size="28" fill="#9ca3af" text-anchor="middle">أفضل صالون حلاقة رجالي في العاشر من رمضان</text>
+  <rect x="480" y="450" width="240" height="4" rx="2" fill="#f59e0b"/>
+</svg>

@@ -1,6 +1,7 @@
 import { trpc } from "@/providers/trpc";
 import { Layout } from "@/components/Layout";
 import SEO from "@/components/SEO";
+import BreadcrumbSchema from "@/components/BreadcrumbSchema";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tag, Percent, Calendar } from "lucide-react";
 
@@ -10,6 +11,7 @@ export default function OffersPage() {
   return (
     <Layout>
       <SEO title="العروض والكوبونات" description="عروض وخصومات صالون الملوك - كوبونات خصم وعروض حصرية على خدمات ومنتجات الحلاقة." path="/offers" />
+      <BreadcrumbSchema items={[{ name: "الرئيسية", path: "/" }, { name: "العروض", path: "/offers" }]} />
       <div className="min-h-screen bg-black pt-24 pb-20">
         <div className="max-w-4xl mx-auto px-4">
           <div className="text-center mb-12">

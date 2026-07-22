@@ -5,6 +5,7 @@ import { Layout } from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import SEO from "@/components/SEO";
 import JSONLD from "@/components/JSONLD";
+import BreadcrumbSchema from "@/components/BreadcrumbSchema";
 import {
   Scissors,
   Crown,
@@ -61,6 +62,7 @@ export default function Home() {
         path="/"
       />
       <JSONLD />
+      <BreadcrumbSchema items={[{ name: "الرئيسية", path: "/" }]} />
       {/* Hero */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-black via-black/95 to-black" />

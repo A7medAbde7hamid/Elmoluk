@@ -1,6 +1,7 @@
 import { trpc } from "@/providers/trpc";
 import { Layout } from "@/components/Layout";
 import SEO from "@/components/SEO";
+import BreadcrumbSchema from "@/components/BreadcrumbSchema";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Star, Phone, ChevronRight } from "lucide-react";
@@ -19,6 +20,7 @@ export default function Barbers() {
   return (
     <Layout>
       <SEO title="فريق الحلاقين" description="تعرف على حلاقي صالون الملوك - فريق من المحترفين بخبرة أكثر من 10 سنوات في الحلاقة والعناية." path="/barbers" />
+      <BreadcrumbSchema items={[{ name: "الرئيسية", path: "/" }, { name: "الحلاقين", path: "/barbers" }]} />
       <div className="min-h-screen bg-black text-white py-20">
         <div className="max-w-6xl mx-auto px-4">
           <div className="text-center mb-12">
