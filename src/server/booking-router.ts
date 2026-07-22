@@ -5,7 +5,6 @@ import { createRouter, publicQuery, authedQuery, adminQuery, rateLimitedPublicQu
 import { getDb, getPool } from "./queries/connection.js";
 import { bookings, barbers, services, packages, users, barberSchedules, loyaltyPoints } from "../../db/schema.js";
 import { sendWhatsAppMessage } from "./lib/notifications.js";
-import { randomInt } from "crypto";
 
 export const bookingRouter = createRouter({
   // List bookings with filters (admin)
@@ -145,9 +144,6 @@ export const bookingRouter = createRouter({
       const count = Number((countRows as any[])[0]?.cnt || 0);
       const queueNumber = count + 1;
       
-      // Generate OTP (cryptographically secure)
-      const otpCode = randomInt(1000, 10000).toString();
-      
       const notes = input.notes
         ? (input.customerName ? `العميل: ${input.customerName}${input.customerPhone ? ` - ${input.customerPhone}` : ""}\n${input.notes}` : input.notes)
         : input.customerName
@@ -155,19 +151,17 @@ export const bookingRouter = createRouter({
           : null;
       
       const [insertResult] = await getPool().execute(
-        "INSERT INTO bookings (barber_id, service_id, booking_date, booking_time, queue_number, duration, status, payment_status, total_amount, notes, is_home_service, otp_code, otp_verified) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-        [barberId, input.serviceId || null, input.bookingDate, input.bookingTime || "00:00", queueNumber, input.duration, "pending", "pending", parseFloat(input.totalAmount), notes, input.isHomeService, otpCode, false]
+        "INSERT INTO bookings (barber_id, service_id, booking_date, booking_time, queue_number, duration, status, payment_status, total_amount, notes, is_home_service) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        [barberId, input.serviceId || null, input.bookingDate, input.bookingTime || "00:00", queueNumber, input.duration, "pending", "pending", parseFloat(input.totalAmount), notes, input.isHomeService]
       );
       const bookingId = Number((insertResult as any).insertId);
       
       // Notify via WhatsApp
-      let whatsappSent = false;
       if (input.customerPhone) {
-        const msg = `مرحباً ${input.customerName || "عميلنا العزيز"} 👋\nتم استلام حجزك في صالون الملوك ✅\nالتاريخ: ${input.bookingDate}\nدور رقم: ${queueNumber}\nكود التحقق: ${otpCode}\nسيتم تأكيد الحجز قريباً.`;
-        whatsappSent = await sendWhatsAppMessage(input.customerPhone, msg);
+        const msg = `مرحباً ${input.customerName || "عميلنا العزيز"} 👋\nتم حجزك في صالون الملوك ✅\nالتاريخ: ${input.bookingDate}\nدور رقم: ${queueNumber}\nفي انتظارك 🤝`;
+        sendWhatsAppMessage(input.customerPhone, msg);
       }
       
-      // Return OTP if WhatsApp failed (so UI can show it to user)
       return { 
         id: bookingId, 
         barberId,
@@ -182,8 +176,7 @@ export const bookingRouter = createRouter({
         homeAddress: input.homeAddress,
         customerName: input.customerName,
         customerPhone: input.customerPhone,
-        status: "pending" as const,
-        ...(!whatsappSent && { otpCode }),
+        status: "confirmed" as const,
       };
     }),
 

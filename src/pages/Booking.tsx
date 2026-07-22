@@ -8,11 +8,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Calendar } from "@/components/ui/calendar";
-import { format } from "date-fns";
+import { format, startOfDay } from "date-fns";
 import { User, MapPin, Check, Gift, Hash, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { PaymentMethodSelector } from "@/components/PaymentMethodSelector";
-import { OTPDialog } from "@/components/OTPDialog";
 import { useAuth } from "@/hooks/useAuth";
 
 export default function Booking() {
@@ -45,9 +44,6 @@ export default function Booking() {
   const [paymentMethod, setPaymentMethod] = useState<"cash" | "card" | "vodafone_cash" | "wallet">(() => (localStorage.getItem("booking_payment") as any) || "cash");
   const [receiptImage, setReceiptImage] = useState<string | null>(null);
   const [usePoints, setUsePoints] = useState(false);
-  const [otpDialogOpen, setOtpDialogOpen] = useState(false);
-  const [pendingBookingId, setPendingBookingId] = useState<number | null>(null);
-  const [otpSentCode, setOtpSentCode] = useState<string | null>(null);
   const [honeypot, setHoneypot] = useState(""); // Anti-bot honeypot field
 
   // Save booking form to localStorage on change
@@ -73,19 +69,14 @@ export default function Booking() {
 
   const createBooking = trpc.booking.create.useMutation({
     onSuccess: (data) => {
-      setPendingBookingId(data.id);
-      // @ts-expect-error otpCode may not be in the response type
-      const returnedOtp: string | undefined = data.otpCode;
-      if (returnedOtp) {
-        setOtpSentCode(returnedOtp);
-      } else {
-        toast.info("تم إرسال كود التحقق عبر واتساب. إذا لم يصلك الكود، تواصل مع الدعم.");
-      }
-      setOtpDialogOpen(true);
+      toast.success(`تم حجز دورك بنجاح! رقم دورك: ${data.queueNumber}`);
+      const keys = ["step", "serviceId", "barberId", "date", "name", "phone", "email", "notes", "home", "address", "payment"];
+      keys.forEach(k => localStorage.removeItem(`booking_${k}`));
       if (usePoints) {
         redeemPoints.mutate({ points: 2000, description: "استبدال 2000 نقطة للحصول على خدمة مجانية", bookingId: data.id });
       }
       createPayment.mutate({ bookingId: data.id, amount: String(finalAmount), paymentMethod, receiptImage: receiptImage || undefined });
+      navigate("/profile");
     },
     onError: (error) => {
       toast.error(error.message);
@@ -114,20 +105,6 @@ export default function Booking() {
     },
   });
 
-  const verifyOtp = trpc.booking.verifyOtp.useMutation({
-    onSuccess: () => {
-      toast.success("تم التحقق من الحجز بنجاح!");
-      setOtpDialogOpen(false);
-      // Clear saved form data
-      const keys = ["step", "serviceId", "barberId", "date", "name", "phone", "email", "notes", "home", "address", "payment"];
-      keys.forEach(k => localStorage.removeItem(`booking_${k}`));
-      navigate("/profile");
-    },
-    onError: (error) => {
-      toast.error(error.message || "كود التحقق غير صحيح");
-      setOtpCode(["", "", "", ""]);
-    },
-  });
 
   const selectedServiceData = services?.find((s) => s.id === selectedService);
   const selectedBarberData = barbers?.find((b) => b.id === selectedBarber);
@@ -365,7 +342,7 @@ export default function Booking() {
                     mode="single"
                     selected={selectedDate}
                     onSelect={setSelectedDate}
-                    disabled={(date) => date < new Date()}
+                    disabled={(date) => date < startOfDay(new Date())}
                     className="text-white"
                   />
                 </div>
@@ -521,16 +498,6 @@ export default function Booking() {
       <div className="absolute opacity-0 pointer-events-none" aria-hidden="true">
         <input type="text" name="website" value={honeypot} onChange={(e) => setHoneypot(e.target.value)} tabIndex={-1} autoComplete="off" />
       </div>
-
-      {/* OTP Verification Dialog */}
-      <OTPDialog
-        open={otpDialogOpen}
-        onOpenChange={setOtpDialogOpen}
-        sentCode={otpSentCode}
-        pendingBookingId={pendingBookingId}
-        onVerify={(id, code) => verifyOtp.mutate({ id, otpCode: code })}
-        isVerifying={verifyOtp.isPending}
-      />
     </Layout>
   );
 }
