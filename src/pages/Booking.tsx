@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Calendar } from "@/components/ui/calendar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { format } from "date-fns";
-import { User, MapPin, Check, Gift, Hash } from "lucide-react";
+import { User, MapPin, Check, Gift, Hash, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { PaymentMethodSelector } from "@/components/PaymentMethodSelector";
 import { useAuth } from "@/hooks/useAuth";
