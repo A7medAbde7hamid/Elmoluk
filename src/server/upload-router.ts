@@ -4,6 +4,7 @@ import { TRPCError } from "@trpc/server";
 import cloudinary from "./lib/cloudinary.js";
 
 const ALLOWED_EXTENSIONS = ["png", "jpg", "jpeg", "gif", "webp"];
+const ALLOWED_MIME_TYPES = ["image/png", "image/jpeg", "image/gif", "image/webp"];
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
 function validateImage(input: { fileName: string; base64: string }) {
@@ -11,11 +12,19 @@ function validateImage(input: { fileName: string; base64: string }) {
   if (!ALLOWED_EXTENSIONS.includes(ext)) {
     throw new TRPCError({ code: "BAD_REQUEST", message: "نوع الملف غير مسموح به" });
   }
-  const match = input.base64.match(/^data:image\/(\w+);base64,(.+)$/);
-  if (!match) {
+  const mimeTypeMatch = input.base64.match(/^data:(image\/[a-zA-Z]+);base64,(.+)$/);
+  if (!mimeTypeMatch) {
     throw new TRPCError({ code: "BAD_REQUEST", message: "تنسيق الصورة غير صحيح" });
   }
-  const raw = match[2];
+  const mimeType = mimeTypeMatch[1];
+  if (!ALLOWED_MIME_TYPES.includes(mimeType as any)) {
+    throw new TRPCError({ code: "BAD_REQUEST", message: "نوع الصورة غير مسموح به: ${mimeType}" });
+  }
+  const extFromMime = mimeType.split('/')[1];
+  if (extFromMime && !ALLOWED_EXTENSIONS.includes(extFromMime)) {
+    throw new TRPCError({ code: "BAD_REQUEST", message: "عدم تطابق نوع الملف: نوع الملف لا يتطابق مع النوع المعلن" });
+  }
+  const raw = mimeTypeMatch[2];
   const buffer = Buffer.from(raw, "base64");
   if (buffer.length > MAX_FILE_SIZE) {
     throw new TRPCError({ code: "BAD_REQUEST", message: "حجم الصورة يتجاوز 5 ميجابايت" });

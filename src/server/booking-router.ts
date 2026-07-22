@@ -193,11 +193,14 @@ export const bookingRouter = createRouter({
       const bookingId = Number((insertResult as any).insertId);
       
       // Notify via WhatsApp
+      let whatsappSent = false;
       if (input.customerPhone) {
         const msg = `مرحباً ${input.customerName || "عميلنا العزيز"} 👋\nتم استلام حجزك في صالون الملوك ✅\nالتاريخ: ${input.bookingDate}\nدور رقم: ${queueNumber}\nكود التحقق: ${otpCode}\nسيتم تأكيد الحجز قريباً.`;
-        sendWhatsAppMessage(input.customerPhone, msg);
+        whatsappSent = await sendWhatsAppMessage(input.customerPhone, msg);
       }
       
+      // In development, include OTP in response for testing
+      const isDev = process.env.NODE_ENV !== "production";
       return { 
         id: bookingId, 
         barberId,
@@ -213,6 +216,7 @@ export const bookingRouter = createRouter({
         customerName: input.customerName,
         customerPhone: input.customerPhone,
         status: "pending" as const,
+        ...(isDev && { otpCode, whatsappSent }),
       };
     }),
 

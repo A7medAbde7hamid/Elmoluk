@@ -10,23 +10,39 @@ function getConfig() {
 
 export async function sendWhatsAppMessage(to: string, body: string): Promise<boolean> {
   const config = getConfig();
-  if (!config) return false;
+  if (!config) {
+    console.warn("[WhatsApp] Config missing - WHATSAPP_PHONE_NUMBER_ID or WHATSAPP_ACCESS_TOKEN not set. Message not sent.");
+    console.warn("[WhatsApp] Message would have been sent to:", to);
+    console.warn("[WhatsApp] Message body:", body);
+    return false;
+  }
 
-  const res = await fetch(`${WHATSAPP_BASE_URL}/${config.phoneNumberId}/messages`, {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${config.accessToken}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      messaging_product: "whatsapp",
-      to: to.replace(/^\+/, ""),
-      type: "text",
-      text: { body },
-    }),
-  });
+  try {
+    const res = await fetch(`${WHATSAPP_BASE_URL}/${config.phoneNumberId}/messages`, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${config.accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        messaging_product: "whatsapp",
+        to: to.replace(/^\+/, ""),
+        type: "text",
+        text: { body },
+      }),
+    });
 
-  return res.ok;
+    if (!res.ok) {
+      const errorText = await res.text();
+      console.error("[WhatsApp] Failed to send message:", res.status, errorText);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error("[WhatsApp] Error sending message:", error);
+    return false;
+  }
 }
 
 export function getWhatsAppLink(phone: string, text: string): string {
