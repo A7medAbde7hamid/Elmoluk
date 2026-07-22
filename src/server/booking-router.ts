@@ -199,8 +199,7 @@ export const bookingRouter = createRouter({
         whatsappSent = await sendWhatsAppMessage(input.customerPhone, msg);
       }
       
-      // In development, include OTP in response for testing
-      const isDev = process.env.NODE_ENV !== "production";
+      // Return OTP if WhatsApp failed (so UI can show it to user)
       return { 
         id: bookingId, 
         barberId,
@@ -216,7 +215,7 @@ export const bookingRouter = createRouter({
         customerName: input.customerName,
         customerPhone: input.customerPhone,
         status: "pending" as const,
-        ...(isDev && { otpCode, whatsappSent }),
+        ...(!whatsappSent && { otpCode }),
       };
     }),
 
