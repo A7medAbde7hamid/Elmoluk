@@ -180,27 +180,17 @@ export const bookingRouter = createRouter({
       // Generate OTP
       const otpCode = Math.floor(1000 + Math.random() * 9000).toString();
       
-      const bookingData = {
-        userId: input.userId,
-        barberId,
-        serviceId: input.serviceId,
-        packageId: input.packageId,
-        bookingDate: input.bookingDate,
-        bookingTime: input.bookingTime || "00:00",
-        queueNumber,
-        duration: input.duration,
-        totalAmount: parseFloat(input.totalAmount),
-        notes: input.notes ? (input.customerName ? `العميل: ${input.customerName}${input.customerPhone ? ` - ${input.customerPhone}` : ""}\n${input.notes}` : input.notes) : input.customerName ? `العميل: ${input.customerName}${input.customerPhone ? ` - ${input.customerPhone}` : ""}` : undefined,
-        isHomeService: input.isHomeService,
-        homeAddress: input.homeAddress,
-        otpCode,
-        otpVerified: false,
-        status: "pending" as const,
-        paymentStatus: "pending" as const,
-      };
+      const notes = input.notes
+        ? (input.customerName ? `العميل: ${input.customerName}${input.customerPhone ? ` - ${input.customerPhone}` : ""}\n${input.notes}` : input.notes)
+        : input.customerName
+          ? `العميل: ${input.customerName}${input.customerPhone ? ` - ${input.customerPhone}` : ""}`
+          : null;
       
-      const result = await db.insert(bookings).values(bookingData);
-      const bookingId = Number(result[0].insertId);
+      const [insertResult] = await getPool().execute(
+        "INSERT INTO bookings (barber_id, service_id, booking_date, booking_time, queue_number, duration, status, payment_status, total_amount, notes, is_home_service, otp_code, otp_verified) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        [barberId, input.serviceId || null, input.bookingDate, input.bookingTime || "00:00", queueNumber, input.duration, "pending", "pending", parseFloat(input.totalAmount), notes, input.isHomeService, otpCode, false]
+      );
+      const bookingId = Number((insertResult as any).insertId);
       
       // Notify via WhatsApp
       if (input.customerPhone) {
