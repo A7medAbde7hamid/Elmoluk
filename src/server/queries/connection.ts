@@ -25,7 +25,7 @@ function createPool() {
 let pool: mysql.Pool;
 let instance: any;
 
-function getPool() {
+export function getPool() {
   if (!pool) pool = createPool();
   return pool;
 }

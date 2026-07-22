@@ -2,7 +2,7 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { eq, desc, and, or, gte, lte, sql } from "drizzle-orm";
 import { createRouter, publicQuery, authedQuery, adminQuery } from "./middleware.js";
-import { getDb } from "./queries/connection.js";
+import { getDb, getPool } from "./queries/connection.js";
 import { bookings, barbers, services, packages, users, barberSchedules, loyaltyPoints } from "../../db/schema.js";
 import { sendWhatsAppMessage } from "./lib/notifications.js";
 
@@ -170,10 +170,11 @@ export const bookingRouter = createRouter({
       }
       
       // Calculate queue number for the day
-      const [countResult] = await db.execute(
-        sql`SELECT COUNT(*) as cnt FROM bookings WHERE booking_date = ${input.bookingDate}`
+      const [countRows] = await getPool().execute(
+        "SELECT COUNT(*) as cnt FROM bookings WHERE booking_date = ?",
+        [input.bookingDate]
       );
-      const count = Number(countResult[0]?.cnt || 0);
+      const count = Number((countRows as any[])[0]?.cnt || 0);
       const queueNumber = count + 1;
       
       // Generate OTP
