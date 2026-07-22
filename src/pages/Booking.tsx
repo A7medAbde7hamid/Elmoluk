@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Calendar } from "@/components/ui/calendar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { format } from "date-fns";
-import { Clock, User, MapPin, Check, Gift } from "lucide-react";
+import { User, MapPin, Check, Gift, Hash } from "lucide-react";
 import { toast } from "sonner";
 import { PaymentMethodSelector } from "@/components/PaymentMethodSelector";
 import { useAuth } from "@/hooks/useAuth";
@@ -25,7 +25,6 @@ export default function Booking() {
   });
   const [selectedBarber, setSelectedBarber] = useState<number | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
-  const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [customerEmail, setCustomerEmail] = useState("");
@@ -41,13 +40,6 @@ export default function Booking() {
 
   const { data: services } = trpc.service.list.useQuery({ isActive: true });
   const { data: barbers } = trpc.barber.list.useQuery({ isActive: true });
-  const { data: timeSlots } = trpc.booking.getTimeSlots.useQuery(
-    {
-      barberId: selectedBarber ?? undefined,
-      date: selectedDate ? format(selectedDate, "yyyy-MM-dd") : "",
-    },
-    { enabled: !!selectedDate }
-  );
   const { data: loyalty } = trpc.loyalty.myPoints.useQuery(undefined, {
     enabled: !!user,
   });
@@ -117,7 +109,7 @@ export default function Booking() {
   };
 
   const handleSubmit = () => {
-    if (!selectedService || !selectedDate || !selectedTime) return;
+    if (!selectedService || !selectedDate) return;
     
     createBooking.mutate(
       {
@@ -126,7 +118,6 @@ export default function Booking() {
         serviceId: selectedService,
         packageId: searchParams.get("packageId") ? Number(searchParams.get("packageId")) : undefined,
         bookingDate: format(selectedDate, "yyyy-MM-dd"),
-        bookingTime: selectedTime,
         duration: selectedServiceData?.duration || 30,
         totalAmount: String(finalAmount),
         notes: usePoints ? `${notes ? notes + "\n" : ""}[تم استخدام نقاط الولاء]` : notes,
@@ -142,13 +133,12 @@ export default function Booking() {
   const steps = [
     { id: 1, label: "الخدمة" },
     { id: 2, label: "الحلاق" },
-    { id: 3, label: "الموعد" },
-    { id: 4, label: "التأكيد" },
+    { id: 3, label: "التأكيد" },
   ];
 
   return (
     <Layout>
-      <SEO title="احجز موعدك" description="احجز موعدك في صالون الملوك بسهولة. اختر الخدمة والحلاق والوقت المناسب لك." path="/booking" />
+      <SEO title="احجز موعدك" description="احجز موعدك في صالون الملوك بسهولة. اختر الخدمة والحلاق والتاريخ المناسب لك." path="/booking" />
       <div className="min-h-screen bg-black pt-24 pb-20">
         <div className="max-w-4xl mx-auto px-4">
           <div className="text-center mb-10">
@@ -321,123 +311,33 @@ export default function Booking() {
             </div>
           )}
 
-          {/* Step 3: Date & Time */}
+          {/* Step 3: Date + Confirmation */}
           {step === 3 && (
             <div className="space-y-6">
               <h2 className="text-2xl font-bold text-white mb-6">
-                اختر التاريخ والوقت
+                اختر التاريخ والتأكيد
               </h2>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div>
-                  <Label className="text-white mb-3 block">التاريخ</Label>
-                  <div className="bg-zinc-900 p-4 rounded-2xl border border-amber-500/10">
-                    <Calendar
-                      mode="single"
-                      selected={selectedDate}
-                      onSelect={setSelectedDate}
-                      disabled={(date) => date < new Date()}
-                      className="text-white"
-                    />
+              {/* Date Selection */}
+              <div className="bg-zinc-900 rounded-2xl border border-amber-500/10 p-6">
+                <Label className="text-white mb-3 block">اختر اليوم</Label>
+                <div className="bg-zinc-800/50 p-4 rounded-xl border border-amber-500/10">
+                  <Calendar
+                    mode="single"
+                    selected={selectedDate}
+                    onSelect={setSelectedDate}
+                    disabled={(date) => date < new Date()}
+                    className="text-white"
+                  />
+                </div>
+                {selectedDate && (
+                  <div className="mt-4 p-4 bg-amber-500/10 rounded-xl border border-amber-500/20 text-center">
+                    <Hash className="w-8 h-8 text-amber-400 mx-auto mb-2" />
+                    <p className="text-amber-400 font-bold text-lg">حجز بالدور</p>
+                    <p className="text-gray-400 text-sm mt-1">سيتم تحديد رقم دورك بعد تأكيد الحجز</p>
                   </div>
-                </div>
-
-                <div>
-                  <Label className="text-white mb-3 block">الوقت</Label>
-                  {selectedDate ? (
-                    timeSlots && timeSlots.length > 0 ? (
-                      <div className="flex flex-wrap gap-2">
-                        {timeSlots.map((slot) => (
-                          <button
-                            key={slot}
-                            onClick={() => setSelectedTime(slot)}
-                            className={`px-5 py-3 rounded-xl text-sm font-bold transition-all duration-200 ${
-                              selectedTime === slot
-                                ? "bg-amber-500 text-black shadow-lg shadow-amber-500/20 scale-105"
-                                : "bg-zinc-800/50 text-gray-300 border border-zinc-700 hover:border-amber-500/40 hover:bg-zinc-700/50"
-                            }`}
-                          >
-                            {slot}
-                          </button>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-center py-12 bg-zinc-900/50 rounded-2xl border border-zinc-800">
-                        <Clock className="w-10 h-10 text-gray-600 mx-auto mb-3" />
-                        <p className="text-gray-400">لا توجد أوقات متاحة لهذا اليوم</p>
-                        <p className="text-gray-600 text-sm mt-1">يرجى اختيار يوم آخر</p>
-                      </div>
-                    )
-                  ) : (
-                    <div className="text-center py-12 bg-zinc-900/50 rounded-2xl border border-zinc-800">
-                      <Clock className="w-10 h-10 text-gray-600 mx-auto mb-3" />
-                      <p className="text-gray-400">اختر تاريخاً لعرض الأوقات المتاحة</p>
-                    </div>
-                  )}
-                </div>
+                )}
               </div>
-
-              {/* Home Service */}
-              {selectedServiceData?.isHomeService && (
-                <div className="bg-zinc-900 p-6 rounded-2xl border border-amber-500/10">
-                  <label className="flex items-center gap-3 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={isHomeService}
-                      onChange={(e) => setIsHomeService(e.target.checked)}
-                      className="w-5 h-5 rounded border-amber-500 text-amber-500"
-                    />
-                    <span className="text-white">خدمة منزلية</span>
-                    <span className="text-amber-400 text-sm">
-                      (+{selectedServiceData.homeServiceFee} ج.م)
-                    </span>
-                  </label>
-                  {isHomeService && (
-                    <div className="mt-4">
-                      <Label className="text-gray-300">عنوان المنزل</Label>
-                      <Input
-                        placeholder="أدخل عنوانك الكامل"
-                        value={homeAddress}
-                        onChange={(e) => setHomeAddress(e.target.value)}
-                        className="mt-2 bg-black border-amber-500/20 text-white"
-                      />
-                    </div>
-                  )}
-                </div>
-              )}
-
-              <div className="flex justify-between">
-                <Button
-                  variant="outline"
-                  onClick={() => setStep(2)}
-                  className="border-amber-500/30 text-amber-400"
-                >
-                  السابق
-                </Button>
-                <Button
-                  onClick={() => {
-                    if (!selectedTime && timeSlots && timeSlots.length > 0) {
-                      setSelectedTime(timeSlots[0]);
-                    }
-                    setStep(4);
-                  }}
-                  disabled={!selectedDate || !timeSlots || timeSlots.length === 0}
-                  className="bg-amber-500 hover:bg-amber-600 text-black disabled:opacity-50"
-                >
-                  {!selectedTime && timeSlots && timeSlots.length > 0
-                    ? "تخطي (اختيار أول وقت)"
-                    : "التالي"}
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {/* Step 4: Confirmation */}
-          {step === 4 && (
-            <div className="space-y-6">
-              <h2 className="text-2xl font-bold text-white mb-6">
-                تأكيد الحجز
-              </h2>
 
               <div className="bg-zinc-900 rounded-2xl border border-amber-500/10 p-6 space-y-4">
                 <div className="flex items-center justify-between pb-4 border-b border-zinc-800">
@@ -457,12 +357,12 @@ export default function Booking() {
                 <div className="flex items-center justify-between pb-4 border-b border-zinc-800">
                   <span className="text-gray-400">التاريخ</span>
                   <span className="text-white font-bold">
-                    {selectedDate?.toLocaleDateString("ar-SA")}
+                    {selectedDate?.toLocaleDateString("ar-SA") || "—"}
                   </span>
                 </div>
                 <div className="flex items-center justify-between pb-4 border-b border-zinc-800">
-                  <span className="text-gray-400">الوقت</span>
-                  <span className="text-white font-bold">{selectedTime}</span>
+                  <span className="text-gray-400">نظام الحجز</span>
+                  <span className="text-amber-400 font-bold">بالدور</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-gray-400">السعر</span>
@@ -560,14 +460,14 @@ export default function Booking() {
               <div className="flex justify-between">
                 <Button
                   variant="outline"
-                  onClick={() => setStep(3)}
+                  onClick={() => setStep(2)}
                   className="border-amber-500/30 text-amber-400"
                 >
                   السابق
                 </Button>
                 <Button
                   onClick={handleSubmit}
-                  disabled={createBooking.isPending}
+                  disabled={createBooking.isPending || !selectedDate}
                   className="bg-amber-500 hover:bg-amber-600 text-black disabled:opacity-50"
                 >
                   {createBooking.isPending ? "جاري الحجز..." : "تأكيد الحجز"}

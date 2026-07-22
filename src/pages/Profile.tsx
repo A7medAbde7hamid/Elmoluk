@@ -158,7 +158,7 @@ export default function Profile() {
                                 {new Date(booking.bookingDate).toLocaleDateString(
                                   "ar-SA"
                                 )}{" "}
-                                - {booking.bookingTime}
+                                - دور #{booking.queueNumber || "—"}
                               </div>
                             </div>
                           </div>

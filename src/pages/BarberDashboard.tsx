@@ -119,7 +119,7 @@ export default function BarberDashboard() {
                       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
                         <div>
                           <div className="flex items-center gap-2">
-                            <span className="text-amber-400 font-bold text-lg">{b.bookingTime}</span>
+                            <span className="text-amber-400 font-bold text-lg">دور #{b.queueNumber || "—"}</span>
                             <span className={`px-2 py-0.5 text-xs rounded-full font-bold ${
                               b.status === "completed" ? "bg-green-500/20 text-green-400" :
                               b.status === "confirmed" ? "bg-blue-500/20 text-blue-400" :
@@ -192,7 +192,7 @@ export default function BarberDashboard() {
                 <SelectItem value="vodafone_cash">فودافون كاش</SelectItem>
               </SelectContent>
             </Select>
-            <Input placeholder="الوقت" type="time" value={walkIn.bookingTime}
+            <Input placeholder="الوقت" type="time" value={walkIn.bookingTime || new Date().toTimeString().slice(0, 5)}
               onChange={(e) => setWalkIn({ ...walkIn, bookingTime: e.target.value })}
               className="bg-zinc-800 border-amber-500/20 text-white" />
           </div>

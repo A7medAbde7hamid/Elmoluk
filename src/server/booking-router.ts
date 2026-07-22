@@ -135,7 +135,7 @@ export const bookingRouter = createRouter({
         serviceId: z.number().optional(),
         packageId: z.number().optional(),
         bookingDate: z.string(),
-        bookingTime: z.string(),
+        bookingTime: z.string().optional(),
         duration: z.number().min(5),
         totalAmount: z.string(),
         notes: z.string().optional(),
@@ -169,6 +169,13 @@ export const bookingRouter = createRouter({
         if (!barberId) throw new Error("لا يوجد حلاق متاح في هذا اليوم");
       }
       
+      // Calculate queue number for the day
+      const [countResult] = await db.execute(
+        sql`SELECT COUNT(*) as cnt FROM bookings WHERE booking_date = ${input.bookingDate}`
+      );
+      const count = Number(countResult[0]?.cnt || 0);
+      const queueNumber = count + 1;
+      
       // Generate OTP
       const otpCode = Math.floor(1000 + Math.random() * 9000).toString();
       
@@ -178,7 +185,8 @@ export const bookingRouter = createRouter({
         serviceId: input.serviceId,
         packageId: input.packageId,
         bookingDate: input.bookingDate,
-        bookingTime: input.bookingTime,
+        bookingTime: input.bookingTime || "00:00",
+        queueNumber,
         duration: input.duration,
         totalAmount: parseFloat(input.totalAmount),
         notes: input.notes ? (input.customerName ? `العميل: ${input.customerName}${input.customerPhone ? ` - ${input.customerPhone}` : ""}\n${input.notes}` : input.notes) : input.customerName ? `العميل: ${input.customerName}${input.customerPhone ? ` - ${input.customerPhone}` : ""}` : undefined,
@@ -195,7 +203,7 @@ export const bookingRouter = createRouter({
       
       // Notify via WhatsApp
       if (input.customerPhone) {
-        const msg = `مرحباً ${input.customerName || "عميلنا العزيز"} 👋\nتم استلام حجزك في صالون الملوك ✅\nالتاريخ: ${input.bookingDate}\nالوقت: ${input.bookingTime}\nكود التحقق: ${otpCode}\nسيتم تأكيد الحجز قريباً.`;
+        const msg = `مرحباً ${input.customerName || "عميلنا العزيز"} 👋\nتم استلام حجزك في صالون الملوك ✅\nالتاريخ: ${input.bookingDate}\nدور رقم: ${queueNumber}\nكود التحقق: ${otpCode}\nسيتم تأكيد الحجز قريباً.`;
         sendWhatsAppMessage(input.customerPhone, msg);
       }
       
@@ -205,7 +213,7 @@ export const bookingRouter = createRouter({
         serviceId: input.serviceId,
         packageId: input.packageId,
         bookingDate: input.bookingDate,
-        bookingTime: input.bookingTime,
+        queueNumber,
         duration: input.duration,
         totalAmount: input.totalAmount,
         notes: input.notes,

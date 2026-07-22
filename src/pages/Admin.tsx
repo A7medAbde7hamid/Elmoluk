@@ -440,7 +440,7 @@ function AdminBookingsTable({ bookings }: { bookings?: any[] }) {
               <div>
                 <h3 className="text-white font-bold">{booking.service?.name || "خدمة"}</h3>
                 <p className="text-gray-400 text-sm">{booking.barber?.name || "أي حلاق"} - {booking.user?.name || "ضيف"}</p>
-                <p className="text-gray-500 text-xs mt-1">{new Date(booking.bookingDate).toLocaleDateString("ar-SA")} - {booking.bookingTime}</p>
+                <p className="text-gray-500 text-xs mt-1">{new Date(booking.bookingDate).toLocaleDateString("ar-SA")} - دور #{booking.queueNumber || "—"}</p>
               </div>
               <div className="flex items-center gap-3">
                 <span className="text-amber-400 font-bold">{booking.totalAmount} ج.م</span>
