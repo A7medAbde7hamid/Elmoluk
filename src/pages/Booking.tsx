@@ -8,11 +8,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Calendar } from "@/components/ui/calendar";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { format } from "date-fns";
 import { User, MapPin, Check, Gift, Hash, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { PaymentMethodSelector } from "@/components/PaymentMethodSelector";
+import { OTPDialog } from "@/components/OTPDialog";
 import { useAuth } from "@/hooks/useAuth";
 
 export default function Booking() {
@@ -47,8 +47,8 @@ export default function Booking() {
   const [usePoints, setUsePoints] = useState(false);
   const [otpDialogOpen, setOtpDialogOpen] = useState(false);
   const [pendingBookingId, setPendingBookingId] = useState<number | null>(null);
-  const [otpCode, setOtpCode] = useState(["", "", "", ""]);
   const [otpSentCode, setOtpSentCode] = useState<string | null>(null);
+  const [honeypot, setHoneypot] = useState(""); // Anti-bot honeypot field
 
   // Save booking form to localStorage on change
   useEffect(() => {
@@ -78,7 +78,6 @@ export default function Booking() {
       const returnedOtp: string | undefined = data.otpCode;
       if (returnedOtp) {
         setOtpSentCode(returnedOtp);
-        setOtpCode(returnedOtp.split(""));
       } else {
         toast.info("تم إرسال كود التحقق عبر واتساب. إذا لم يصلك الكود، تواصل مع الدعم.");
       }
@@ -148,6 +147,7 @@ export default function Booking() {
 
   const handleSubmit = () => {
     if (!selectedService || !selectedDate) return;
+    if (honeypot) return; // Bot detected
     
     createBooking.mutate(
       {
@@ -517,63 +517,20 @@ export default function Booking() {
         </div>
       </div>
 
+      {/* Honeypot field (invisible to users, catches bots) */}
+      <div className="absolute opacity-0 pointer-events-none" aria-hidden="true">
+        <input type="text" name="website" value={honeypot} onChange={(e) => setHoneypot(e.target.value)} tabIndex={-1} autoComplete="off" />
+      </div>
+
       {/* OTP Verification Dialog */}
-      <Dialog open={otpDialogOpen} onOpenChange={(o) => { if (!o) { setOtpDialogOpen(false); setOtpCode(["", "", "", ""]); setOtpSentCode(null); } }}>
-        <DialogContent className="bg-zinc-900 border-amber-500/20 text-white max-w-sm">
-          <DialogHeader>
-            <DialogTitle className="text-center">تأكيد الحجز</DialogTitle>
-            <DialogDescription className="text-center text-gray-400">
-              {otpSentCode ? "كود التحقق الخاص بك" : "تم إرسال كود التحقق عبر واتساب"}
-            </DialogDescription>
-          </DialogHeader>
-          {otpSentCode && (
-            <div className="text-center mb-4">
-              <p className="text-gray-400 text-sm mb-2">انسخ الكود التالي أو اضغط تأكيد:</p>
-              <p className="text-3xl font-bold text-amber-400 tracking-widest ltr" dir="ltr">{otpSentCode}</p>
-            </div>
-          )}
-          <div className="flex justify-center gap-3 my-6" dir="ltr">
-            {otpCode.map((digit, i) => (
-              <input
-                key={i}
-                type="text"
-                maxLength={1}
-                autoFocus={i === 0}
-                value={digit}
-                onChange={(e) => {
-                  const val = e.target.value.replace(/\D/g, "");
-                  const newCode = [...otpCode];
-                  newCode[i] = val;
-                  setOtpCode(newCode);
-                  if (val && i < 3) {
-                    const next = document.getElementById(`otp-${i + 1}`);
-                    next?.focus();
-                  }
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Backspace" && !digit && i > 0) {
-                    const prev = document.getElementById(`otp-${i - 1}`);
-                    prev?.focus();
-                  }
-                }}
-                id={`otp-${i}`}
-                className="w-14 h-14 text-center text-2xl font-bold bg-zinc-800 border border-amber-500/30 rounded-xl text-white focus:border-amber-500 focus:outline-none"
-              />
-            ))}
-          </div>
-          <Button
-            className="w-full bg-amber-500 hover:bg-amber-600 text-black font-bold"
-            disabled={otpCode.some((d) => !d) || verifyOtp.isPending}
-            onClick={() => {
-              if (pendingBookingId) {
-                verifyOtp.mutate({ id: pendingBookingId, otpCode: otpCode.join("") });
-              }
-            }}
-          >
-            {verifyOtp.isPending ? "جاري التحقق..." : "تأكيد"}
-          </Button>
-        </DialogContent>
-      </Dialog>
+      <OTPDialog
+        open={otpDialogOpen}
+        onOpenChange={setOtpDialogOpen}
+        sentCode={otpSentCode}
+        pendingBookingId={pendingBookingId}
+        onVerify={(id, code) => verifyOtp.mutate({ id, otpCode: code })}
+        isVerifying={verifyOtp.isPending}
+      />
     </Layout>
   );
 }

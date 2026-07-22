@@ -340,7 +340,7 @@ export const bookingRouter = createRouter({
       return { success: true };
     }),
 
-  // Verify OTP (rate-limited: max 3 failed attempts)
+  // Verify OTP (rate-limited: max 3 failed attempts, expires after 10 min)
   verifyOtp: publicQuery
     .input(
       z.object({
@@ -357,6 +357,15 @@ export const bookingRouter = createRouter({
       if (!booking) throw new Error("Booking not found");
       if (booking.otpVerified) throw new Error("OTP already verified");
       if ((booking.otpAttempts ?? 0) >= 3) throw new Error("تم تجاوز الحد الأقصى لمحاولات التحقق");
+      
+      // Check OTP expiry (10 minutes)
+      const createdAt = booking.createdAt;
+      if (createdAt) {
+        const elapsed = Date.now() - new Date(createdAt).getTime();
+        if (elapsed > 10 * 60 * 1000) {
+          throw new Error("انتهت صلاحية كود التحقق. يرجى إعادة الحجز.");
+        }
+      }
       
       if (booking.otpCode !== input.otpCode) {
         await db.update(bookings)
