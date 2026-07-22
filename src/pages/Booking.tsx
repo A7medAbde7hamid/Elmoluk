@@ -38,6 +38,7 @@ export default function Booking() {
   const [otpDialogOpen, setOtpDialogOpen] = useState(false);
   const [pendingBookingId, setPendingBookingId] = useState<number | null>(null);
   const [otpCode, setOtpCode] = useState(["", "", "", ""]);
+  const [otpSentCode, setOtpSentCode] = useState<string | null>(null);
 
   const { data: services } = trpc.service.list.useQuery({ isActive: true });
   const { data: barbers } = trpc.barber.list.useQuery({ isActive: true });
@@ -48,6 +49,14 @@ export default function Booking() {
   const createBooking = trpc.booking.create.useMutation({
     onSuccess: (data) => {
       setPendingBookingId(data.id);
+      // @ts-expect-error otpCode may not be in the response type
+      const returnedOtp: string | undefined = data.otpCode;
+      if (returnedOtp) {
+        setOtpSentCode(returnedOtp);
+        setOtpCode(returnedOtp.split(""));
+      } else {
+        toast.info("تم إرسال كود التحقق عبر واتساب. إذا لم يصلك الكود، تواصل مع الدعم.");
+      }
       setOtpDialogOpen(true);
       if (usePoints) {
         redeemPoints.mutate({ points: 2000, description: "استبدال 2000 نقطة للحصول على خدمة مجانية", bookingId: data.id });
@@ -481,14 +490,20 @@ export default function Booking() {
       </div>
 
       {/* OTP Verification Dialog */}
-      <Dialog open={otpDialogOpen} onOpenChange={(o) => { if (!o) { setOtpDialogOpen(false); setOtpCode(["", "", "", ""]); } }}>
+      <Dialog open={otpDialogOpen} onOpenChange={(o) => { if (!o) { setOtpDialogOpen(false); setOtpCode(["", "", "", ""]); setOtpSentCode(null); } }}>
         <DialogContent className="bg-zinc-900 border-amber-500/20 text-white max-w-sm">
           <DialogHeader>
             <DialogTitle className="text-center">تأكيد الحجز</DialogTitle>
             <DialogDescription className="text-center text-gray-400">
-              {pendingBookingId ? "تم إرسال كود التحقق عبر واتساب" : "يرجى إدخال كود التحقق"}
+              {otpSentCode ? "كود التحقق الخاص بك" : "تم إرسال كود التحقق عبر واتساب"}
             </DialogDescription>
           </DialogHeader>
+          {otpSentCode && (
+            <div className="text-center mb-4">
+              <p className="text-gray-400 text-sm mb-2">انسخ الكود التالي أو اضغط تأكيد:</p>
+              <p className="text-3xl font-bold text-amber-400 tracking-widest ltr" dir="ltr">{otpSentCode}</p>
+            </div>
+          )}
           <div className="flex justify-center gap-3 my-6" dir="ltr">
             {otpCode.map((digit, i) => (
               <input
