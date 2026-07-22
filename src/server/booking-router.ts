@@ -48,22 +48,7 @@ export const bookingRouter = createRouter({
       
       // Enrich with user, barber, service info
       const enriched = await Promise.all(
-        result.map(async (booking) => {
-          const user = booking.userId ? await db.query.users.findFirst({
-            where: eq(users.id, booking.userId),
-          }) : null;
-          const barber = booking.barberId ? await db.query.barbers.findFirst({
-            where: eq(barbers.id, booking.barberId),
-          }) : null;
-          const service = booking.serviceId ? await db.query.services.findFirst({
-            where: eq(services.id, booking.serviceId),
-          }) : null;
-          const pkg = booking.packageId ? await db.query.packages.findFirst({
-            where: eq(packages.id, booking.packageId),
-          }) : null;
-          
-          return { ...booking, user, barber, service, package: pkg };
-        })
+        result.map((booking) => enrichBooking(db, booking, { includeUser: true }))
       );
       
       return enriched;
@@ -87,12 +72,7 @@ export const bookingRouter = createRouter({
       });
       
       const enriched = await Promise.all(
-        result.map(async (booking) => {
-          const barber = booking.barberId ? await db.query.barbers.findFirst({ where: eq(barbers.id, booking.barberId) }) : null;
-          const service = booking.serviceId ? await db.query.services.findFirst({ where: eq(services.id, booking.serviceId) }) : null;
-          const pkg = booking.packageId ? await db.query.packages.findFirst({ where: eq(packages.id, booking.packageId) }) : null;
-          return { ...booking, barber, service, package: pkg };
-        })
+        result.map((booking) => enrichBooking(db, booking))
       );
       return enriched;
     }),
@@ -111,20 +91,7 @@ export const bookingRouter = createRouter({
         throw new TRPCError({ code: "FORBIDDEN", message: "ليس لديك صلاحية" });
       }
       
-      const user = booking.userId ? await db.query.users.findFirst({
-        where: eq(users.id, booking.userId),
-      }) : null;
-      const barber = booking.barberId ? await db.query.barbers.findFirst({
-        where: eq(barbers.id, booking.barberId),
-      }) : null;
-      const service = booking.serviceId ? await db.query.services.findFirst({
-        where: eq(services.id, booking.serviceId),
-      }) : null;
-      const pkg = booking.packageId ? await db.query.packages.findFirst({
-        where: eq(packages.id, booking.packageId),
-      }) : null;
-      
-      return { ...booking, user, barber, service, package: pkg };
+      return enrichBooking(db, booking, { includeUser: true });
     }),
 
   // Create booking (public - can be guest, rate-limited)
@@ -500,4 +467,20 @@ async function getBookingPhone(db: ReturnType<typeof getDb>, booking: typeof boo
     if (user?.phone) return user.phone;
   }
   return null;
+}
+
+async function enrichBooking(
+  db: ReturnType<typeof getDb>,
+  booking: typeof bookings.$inferSelect,
+  opts?: { includeUser?: boolean }
+) {
+  const [barber, service, pkg] = await Promise.all([
+    booking.barberId ? db.query.barbers.findFirst({ where: eq(barbers.id, booking.barberId) }) : Promise.resolve(null),
+    booking.serviceId ? db.query.services.findFirst({ where: eq(services.id, booking.serviceId) }) : Promise.resolve(null),
+    booking.packageId ? db.query.packages.findFirst({ where: eq(packages.id, booking.packageId) }) : Promise.resolve(null),
+  ]);
+  const user = opts?.includeUser && booking.userId
+    ? await db.query.users.findFirst({ where: eq(users.id, booking.userId) })
+    : null;
+  return { ...booking, user, barber, service, package: pkg };
 }
