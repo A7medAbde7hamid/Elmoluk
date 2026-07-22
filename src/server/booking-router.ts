@@ -1,10 +1,11 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { eq, desc, and, or, gte, lte, sql } from "drizzle-orm";
-import { createRouter, publicQuery, authedQuery, adminQuery } from "./middleware.js";
+import { createRouter, publicQuery, authedQuery, adminQuery, rateLimitedPublicQuery } from "./middleware.js";
 import { getDb, getPool } from "./queries/connection.js";
 import { bookings, barbers, services, packages, users, barberSchedules, loyaltyPoints } from "../../db/schema.js";
 import { sendWhatsAppMessage } from "./lib/notifications.js";
+import { randomInt } from "crypto";
 
 export const bookingRouter = createRouter({
   // List bookings with filters (admin)
@@ -126,8 +127,8 @@ export const bookingRouter = createRouter({
       return { ...booking, user, barber, service, package: pkg };
     }),
 
-  // Create booking (public - can be guest)
-  create: publicQuery
+  // Create booking (public - can be guest, rate-limited)
+  create: rateLimitedPublicQuery
     .input(
       z.object({
         userId: z.number().optional(),
@@ -177,8 +178,8 @@ export const bookingRouter = createRouter({
       const count = Number((countRows as any[])[0]?.cnt || 0);
       const queueNumber = count + 1;
       
-      // Generate OTP
-      const otpCode = Math.floor(1000 + Math.random() * 9000).toString();
+      // Generate OTP (cryptographically secure)
+      const otpCode = randomInt(1000, 10000).toString();
       
       const notes = input.notes
         ? (input.customerName ? `العميل: ${input.customerName}${input.customerPhone ? ` - ${input.customerPhone}` : ""}\n${input.notes}` : input.notes)

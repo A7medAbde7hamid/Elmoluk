@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import { trpc } from "@/providers/trpc";
 import { Layout } from "@/components/Layout";
@@ -19,26 +19,51 @@ export default function Booking() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { user } = useAuth();
-  const [step, setStep] = useState(searchParams.get("packageId") ? 2 : 1);
-  const [selectedService, setSelectedService] = useState<number | null>(() => {
-    const sid = searchParams.get("serviceId");
-    return sid ? Number(sid) : null;
+  const [step, setStep] = useState(() => {
+    const saved = localStorage.getItem("booking_step");
+    return saved ? Number(saved) : (searchParams.get("packageId") ? 2 : 1);
   });
-  const [selectedBarber, setSelectedBarber] = useState<number | null>(null);
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
-  const [customerName, setCustomerName] = useState("");
-  const [customerPhone, setCustomerPhone] = useState("");
-  const [customerEmail, setCustomerEmail] = useState("");
-  const [notes, setNotes] = useState("");
-  const [isHomeService, setIsHomeService] = useState(false);
-  const [homeAddress, setHomeAddress] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState<"cash" | "card" | "vodafone_cash" | "wallet">("cash");
+  const [selectedService, setSelectedService] = useState<number | null>(() => {
+    const saved = localStorage.getItem("booking_serviceId");
+    const sid = searchParams.get("serviceId");
+    return sid ? Number(sid) : (saved ? Number(saved) : null);
+  });
+  const [selectedBarber, setSelectedBarber] = useState<number | null>(() => {
+    const saved = localStorage.getItem("booking_barberId");
+    return saved ? Number(saved) : null;
+  });
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(() => {
+    const saved = localStorage.getItem("booking_date");
+    return saved ? new Date(saved) : undefined;
+  });
+  const [customerName, setCustomerName] = useState(() => localStorage.getItem("booking_name") || "");
+  const [customerPhone, setCustomerPhone] = useState(() => localStorage.getItem("booking_phone") || "");
+  const [customerEmail, setCustomerEmail] = useState(() => localStorage.getItem("booking_email") || "");
+  const [notes, setNotes] = useState(() => localStorage.getItem("booking_notes") || "");
+  const [isHomeService, setIsHomeService] = useState(() => localStorage.getItem("booking_home") === "true");
+  const [homeAddress, setHomeAddress] = useState(() => localStorage.getItem("booking_address") || "");
+  const [paymentMethod, setPaymentMethod] = useState<"cash" | "card" | "vodafone_cash" | "wallet">(() => (localStorage.getItem("booking_payment") as any) || "cash");
   const [receiptImage, setReceiptImage] = useState<string | null>(null);
   const [usePoints, setUsePoints] = useState(false);
   const [otpDialogOpen, setOtpDialogOpen] = useState(false);
   const [pendingBookingId, setPendingBookingId] = useState<number | null>(null);
   const [otpCode, setOtpCode] = useState(["", "", "", ""]);
   const [otpSentCode, setOtpSentCode] = useState<string | null>(null);
+
+  // Save booking form to localStorage on change
+  useEffect(() => {
+    localStorage.setItem("booking_step", String(step));
+    localStorage.setItem("booking_serviceId", selectedService?.toString() ?? "");
+    localStorage.setItem("booking_barberId", selectedBarber?.toString() ?? "");
+    localStorage.setItem("booking_date", selectedDate?.toISOString() ?? "");
+    localStorage.setItem("booking_name", customerName);
+    localStorage.setItem("booking_phone", customerPhone);
+    localStorage.setItem("booking_email", customerEmail);
+    localStorage.setItem("booking_notes", notes);
+    localStorage.setItem("booking_home", String(isHomeService));
+    localStorage.setItem("booking_address", homeAddress);
+    localStorage.setItem("booking_payment", paymentMethod);
+  }, [step, selectedService, selectedBarber, selectedDate, customerName, customerPhone, customerEmail, notes, isHomeService, homeAddress, paymentMethod]);
 
   const { data: services } = trpc.service.list.useQuery({ isActive: true });
   const { data: barbers } = trpc.barber.list.useQuery({ isActive: true });
@@ -94,6 +119,9 @@ export default function Booking() {
     onSuccess: () => {
       toast.success("تم التحقق من الحجز بنجاح!");
       setOtpDialogOpen(false);
+      // Clear saved form data
+      const keys = ["step", "serviceId", "barberId", "date", "name", "phone", "email", "notes", "home", "address", "payment"];
+      keys.forEach(k => localStorage.removeItem(`booking_${k}`));
       navigate("/profile");
     },
     onError: (error) => {
