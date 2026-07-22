@@ -76,7 +76,7 @@ export const barberRouter = createRouter({
         const existing = await db.query.users.findFirst({ where: eq(users.email, input.email) });
         if (existing) throw new TRPCError({ code: "CONFLICT", message: "البريد الإلكتروني مستخدم بالفعل" });
         const defaultPassword = process.env.BARBER_DEFAULT_PASSWORD || "barber123";
-        const hashedPassword = await bcrypt.hash(password || defaultPassword, 10);
+        const hashedPassword = await bcrypt.hash(password || defaultPassword, 12);
         const userResult = await db.insert(users).values({
           name: input.name,
           email: input.email,

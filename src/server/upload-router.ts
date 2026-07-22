@@ -18,7 +18,7 @@ function validateImage(input: { fileName: string; base64: string }) {
   }
   const mimeType = mimeTypeMatch[1];
   if (!ALLOWED_MIME_TYPES.includes(mimeType as any)) {
-    throw new TRPCError({ code: "BAD_REQUEST", message: "نوع الصورة غير مسموح به: ${mimeType}" });
+    throw new TRPCError({ code: "BAD_REQUEST", message: `نوع الصورة غير مسموح به: ${mimeType}` });
   }
   const extFromMime = mimeType.split('/')[1];
   if (extFromMime && !ALLOWED_EXTENSIONS.includes(extFromMime)) {

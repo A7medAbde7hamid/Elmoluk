@@ -341,7 +341,7 @@ export const bookingRouter = createRouter({
     }),
 
   // Verify OTP (rate-limited: max 3 failed attempts, expires after 10 min)
-  verifyOtp: publicQuery
+  verifyOtp: rateLimitedPublicQuery
     .input(
       z.object({
         id: z.number(),
@@ -354,16 +354,16 @@ export const bookingRouter = createRouter({
         where: eq(bookings.id, input.id),
       });
       
-      if (!booking) throw new Error("Booking not found");
-      if (booking.otpVerified) throw new Error("OTP already verified");
-      if ((booking.otpAttempts ?? 0) >= 3) throw new Error("تم تجاوز الحد الأقصى لمحاولات التحقق");
+      if (!booking) throw new TRPCError({ code: "NOT_FOUND", message: "Booking not found" });
+      if (booking.otpVerified) throw new TRPCError({ code: "BAD_REQUEST", message: "OTP already verified" });
+      if ((booking.otpAttempts ?? 0) >= 3) throw new TRPCError({ code: "BAD_REQUEST", message: "تم تجاوز الحد الأقصى لمحاولات التحقق" });
       
       // Check OTP expiry (10 minutes)
       const createdAt = booking.createdAt;
       if (createdAt) {
         const elapsed = Date.now() - new Date(createdAt).getTime();
         if (elapsed > 10 * 60 * 1000) {
-          throw new Error("انتهت صلاحية كود التحقق. يرجى إعادة الحجز.");
+          throw new TRPCError({ code: "BAD_REQUEST", message: "انتهت صلاحية كود التحقق. يرجى إعادة الحجز." });
         }
       }
       
@@ -371,7 +371,7 @@ export const bookingRouter = createRouter({
         await db.update(bookings)
           .set({ otpAttempts: (booking.otpAttempts ?? 0) + 1 })
           .where(eq(bookings.id, input.id));
-        throw new Error("رمز التحقق غير صحيح");
+        throw new TRPCError({ code: "BAD_REQUEST", message: "رمز التحقق غير صحيح" });
       }
       
       await db.update(bookings)
