@@ -1,30 +1,10 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
-import { randomUUID } from "crypto";
 import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
 import { appRouter } from "../src/server/router.js";
 import { createContext } from "../src/server/context.js";
 
 const app = new Hono();
-
-app.use("*", async (c, next) => {
-  const start = Date.now();
-  const requestId = randomUUID().slice(0, 8);
-  c.set("requestId", requestId);
-  c.header("X-Request-Id", requestId);
-  await next();
-  const ms = Date.now() - start;
-  const status = c.res.status;
-  if (status >= 500) {
-    console.error(
-      `[MONITOR] [${requestId}] ${c.req.method} ${c.req.path} ${status} ${ms}ms`
-    );
-  } else if (ms > 5000) {
-    console.warn(
-      `[MONITOR] [${requestId}] Slow: ${c.req.method} ${c.req.path} ${status} ${ms}ms`
-    );
-  }
-});
 
 // Body size limit: 5MB for API endpoints (prevents memory exhaustion)
 app.use("/api/*", async (c, next) => {
@@ -75,8 +55,6 @@ app.use("/api/trpc/*", async c => {
   const method = c.req.method;
 
   const headers = new Headers(c.req.raw.headers as HeadersInit);
-  const requestId = c.get("requestId");
-  if (requestId) headers.set("X-Request-Id", requestId);
 
   const body: string | undefined =
     method === "GET" || method === "HEAD" ? undefined : await c.req.text();
@@ -88,39 +66,6 @@ app.use("/api/trpc/*", async c => {
     router: appRouter,
     createContext,
   });
-});
-
-app.get("/api/health", async c => {
-  const health: {
-    status: string;
-    timestamp: string;
-    uptime: number;
-    memory: { rss: string; heap: string };
-    database?: string;
-    env?: string;
-  } = {
-    status: "ok",
-    timestamp: new Date().toISOString(),
-    uptime: Math.round(process.uptime()),
-    memory: {
-      rss: Math.round(process.memoryUsage().rss / 1024 / 1024) + "MB",
-      heap: Math.round(process.memoryUsage().heapUsed / 1024 / 1024) + "MB",
-    },
-    env: process.env.VERCEL ? "production" : "development",
-  };
-
-  try {
-    const { getDb } = await import("../src/server/queries/connection.js");
-    const db = getDb();
-    await db.execute("SELECT 1");
-    health.database = "ok";
-  } catch {
-    health.database = "error";
-    health.status = "degraded";
-  }
-
-  const statusCode = health.status === "ok" ? 200 : 503;
-  return c.json(health, statusCode);
 });
 
 app.all("/api/*", c => c.json({ error: "Not Found" }, 404));
