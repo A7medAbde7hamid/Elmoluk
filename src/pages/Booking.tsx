@@ -35,12 +35,12 @@ export default function Booking() {
     const saved = localStorage.getItem("booking_date");
     return saved ? new Date(saved) : undefined;
   });
-  const [customerName, setCustomerName] = useState(() => localStorage.getItem("booking_name") || "");
-  const [customerPhone, setCustomerPhone] = useState(() => localStorage.getItem("booking_phone") || "");
-  const [customerEmail, setCustomerEmail] = useState(() => localStorage.getItem("booking_email") || "");
-  const [notes, setNotes] = useState(() => localStorage.getItem("booking_notes") || "");
-  const [isHomeService, setIsHomeService] = useState(() => localStorage.getItem("booking_home") === "true");
-  const [homeAddress, setHomeAddress] = useState(() => localStorage.getItem("booking_address") || "");
+  const [customerName, setCustomerName] = useState(() => sessionStorage.getItem("booking_name") || "");
+  const [customerPhone, setCustomerPhone] = useState(() => sessionStorage.getItem("booking_phone") || "");
+  const [customerEmail, setCustomerEmail] = useState(() => sessionStorage.getItem("booking_email") || "");
+  const [notes, setNotes] = useState(() => sessionStorage.getItem("booking_notes") || "");
+  const [isHomeService, setIsHomeService] = useState(() => sessionStorage.getItem("booking_home") === "true");
+  const [homeAddress, setHomeAddress] = useState(() => sessionStorage.getItem("booking_address") || "");
   const [paymentMethod, setPaymentMethod] = useState<"cash" | "card" | "vodafone_cash" | "wallet">(() => (localStorage.getItem("booking_payment") as any) || "cash");
   const [receiptImage, setReceiptImage] = useState<string | null>(null);
   const [usePoints, setUsePoints] = useState(false);
@@ -52,13 +52,13 @@ export default function Booking() {
     localStorage.setItem("booking_serviceId", selectedService?.toString() ?? "");
     localStorage.setItem("booking_barberId", selectedBarber?.toString() ?? "");
     localStorage.setItem("booking_date", selectedDate?.toISOString() ?? "");
-    localStorage.setItem("booking_name", customerName);
-    localStorage.setItem("booking_phone", customerPhone);
-    localStorage.setItem("booking_email", customerEmail);
-    localStorage.setItem("booking_notes", notes);
-    localStorage.setItem("booking_home", String(isHomeService));
-    localStorage.setItem("booking_address", homeAddress);
     localStorage.setItem("booking_payment", paymentMethod);
+    sessionStorage.setItem("booking_name", customerName);
+    sessionStorage.setItem("booking_phone", customerPhone);
+    sessionStorage.setItem("booking_email", customerEmail);
+    sessionStorage.setItem("booking_notes", notes);
+    sessionStorage.setItem("booking_home", String(isHomeService));
+    sessionStorage.setItem("booking_address", homeAddress);
   }, [step, selectedService, selectedBarber, selectedDate, customerName, customerPhone, customerEmail, notes, isHomeService, homeAddress, paymentMethod]);
 
   const { data: services } = trpc.service.list.useQuery({ isActive: true });
@@ -70,8 +70,8 @@ export default function Booking() {
   const createBooking = trpc.booking.create.useMutation({
     onSuccess: (data) => {
       toast.success(`تم حجز دورك بنجاح! رقم دورك: ${data.queueNumber}`);
-      const keys = ["step", "serviceId", "barberId", "date", "name", "phone", "email", "notes", "home", "address", "payment"];
-      keys.forEach(k => localStorage.removeItem(`booking_${k}`));
+      ["step", "serviceId", "barberId", "date", "payment"].forEach(k => localStorage.removeItem(`booking_${k}`));
+      ["name", "phone", "email", "notes", "home", "address"].forEach(k => sessionStorage.removeItem(`booking_${k}`));
       if (usePoints) {
         redeemPoints.mutate({ points: 2000, description: "استبدال 2000 نقطة للحصول على خدمة مجانية", bookingId: data.id });
       }

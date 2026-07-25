@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { eq, desc, and, or, gte, lte, sql } from "drizzle-orm";
+import { eq, desc, and, or, gte, lte, sql, inArray } from "drizzle-orm";
 import { createRouter, publicQuery, authedQuery, adminQuery, rateLimitedPublicQuery } from "./middleware.js";
 import { getDb, getPool } from "./queries/connection.js";
 import { bookings, barbers, services, packages, users, barberSchedules, loyaltyPoints } from "../../db/schema.js";
@@ -45,10 +45,8 @@ export const bookingRouter = createRouter({
         offset: input?.offset,
       });
       
-      // Enrich with user, barber, service info
-      const enriched = await Promise.all(
-        result.map((booking) => enrichBooking(db, booking, { includeUser: true }))
-      );
+      // Batch-enrich with user, barber, service info (4 queries total, not 4N)
+      const enriched = await enrichBookings(db, result, { includeUser: true });
       
       return enriched;
     }),
@@ -70,9 +68,7 @@ export const bookingRouter = createRouter({
         orderBy: [desc(bookings.createdAt)],
       });
       
-      const enriched = await Promise.all(
-        result.map((booking) => enrichBooking(db, booking))
-      );
+      const enriched = await enrichBookings(db, result);
       return enriched;
     }),
 
@@ -425,4 +421,35 @@ async function enrichBooking(
     ? await db.query.users.findFirst({ where: eq(users.id, booking.userId) })
     : null;
   return { ...booking, user, barber, service, package: pkg };
+}
+
+async function enrichBookings(
+  db: ReturnType<typeof getDb>,
+  bookingList: typeof bookings.$inferSelect[],
+  opts?: { includeUser?: boolean }
+) {
+  const barberIds = [...new Set(bookingList.map((b) => b.barberId).filter(Boolean) as number[])];
+  const serviceIds = [...new Set(bookingList.map((b) => b.serviceId).filter(Boolean) as number[])];
+  const packageIds = [...new Set(bookingList.map((b) => b.packageId).filter(Boolean) as number[])];
+  const userIds = opts?.includeUser ? [...new Set(bookingList.map((b) => b.userId).filter(Boolean) as number[])] : [];
+
+  const [barberList, serviceList, packageList, userList] = await Promise.all([
+    barberIds.length ? db.query.barbers.findMany({ where: inArray(barbers.id, barberIds) }) : Promise.resolve([]),
+    serviceIds.length ? db.query.services.findMany({ where: inArray(services.id, serviceIds) }) : Promise.resolve([]),
+    packageIds.length ? db.query.packages.findMany({ where: inArray(packages.id, packageIds) }) : Promise.resolve([]),
+    userIds.length ? db.query.users.findMany({ where: inArray(users.id, userIds) }) : Promise.resolve([]),
+  ]);
+
+  const barberMap = new Map(barberList.map((b) => [b.id, b]));
+  const serviceMap = new Map(serviceList.map((s) => [s.id, s]));
+  const packageMap = new Map(packageList.map((p) => [p.id, p]));
+  const userMap = new Map(userList.map((u) => [u.id, u]));
+
+  return bookingList.map((booking) => ({
+    ...booking,
+    barber: booking.barberId ? barberMap.get(booking.barberId) ?? null : null,
+    service: booking.serviceId ? serviceMap.get(booking.serviceId) ?? null : null,
+    package: booking.packageId ? packageMap.get(booking.packageId) ?? null : null,
+    user: opts?.includeUser && booking.userId ? userMap.get(booking.userId) ?? null : null,
+  }));
 }
