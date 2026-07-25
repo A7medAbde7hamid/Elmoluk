@@ -193,6 +193,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <button
               className="lg:hidden p-2 text-amber-400"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              aria-label={mobileMenuOpen ? "إغلاق القائمة" : "فتح القائمة"}
+              aria-expanded={mobileMenuOpen}
             >
               {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>

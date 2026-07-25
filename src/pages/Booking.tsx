@@ -400,8 +400,9 @@ export default function Booking() {
                   بيانات العميل
                 </h3>
                 <div>
-                  <Label className="text-gray-300 mb-2 block">الاسم</Label>
+                  <Label htmlFor="booking-name" className="text-gray-300 mb-2 block">الاسم</Label>
                   <Input
+                    id="booking-name"
                     placeholder="اسمك الكامل"
                     value={customerName}
                     onChange={(e) => setCustomerName(e.target.value)}
@@ -409,10 +410,11 @@ export default function Booking() {
                   />
                 </div>
                 <div>
-                  <Label className="text-gray-300 mb-2 block">
+                  <Label htmlFor="booking-phone" className="text-gray-300 mb-2 block">
                     رقم الجوال
                   </Label>
                   <Input
+                    id="booking-phone"
                     placeholder="05XXXXXXXX"
                     value={customerPhone}
                     onChange={(e) => setCustomerPhone(e.target.value)}
@@ -420,10 +422,11 @@ export default function Booking() {
                   />
                 </div>
                 <div>
-                  <Label className="text-gray-300 mb-2 block">
+                  <Label htmlFor="booking-email" className="text-gray-300 mb-2 block">
                     البريد الإلكتروني
                   </Label>
                   <Input
+                    id="booking-email"
                     placeholder="email@example.com"
                     value={customerEmail}
                     onChange={(e) => setCustomerEmail(e.target.value)}
@@ -431,8 +434,9 @@ export default function Booking() {
                   />
                 </div>
                 <div>
-                  <Label className="text-gray-300 mb-2 block">ملاحظات</Label>
+                  <Label htmlFor="booking-notes" className="text-gray-300 mb-2 block">ملاحظات</Label>
                   <Input
+                    id="booking-notes"
                     placeholder="أي ملاحظات خاصة..."
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}

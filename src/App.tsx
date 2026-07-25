@@ -1,5 +1,6 @@
 import { lazy, Suspense } from "react";
 import { Routes, Route } from "react-router";
+import { useAuth } from "@/hooks/useAuth";
 
 const Home = lazy(() => import("./pages/Home"));
 const Login = lazy(() => import("./pages/Login"));
@@ -23,6 +24,16 @@ function PageLoading() {
   );
 }
 
+function RequireAuth({ children, allowedRoles }: { children: React.ReactNode; allowedRoles?: string[] }) {
+  const { user, isLoading } = useAuth();
+  if (isLoading) return <PageLoading />;
+  if (!user) { window.location.href = "/login"; return <PageLoading />; }
+  if (allowedRoles && !allowedRoles.includes(user.role)) {
+    window.location.href = "/"; return <PageLoading />;
+  }
+  return <>{children}</>;
+}
+
 export default function App() {
   return (
     <Suspense fallback={<PageLoading />}>
@@ -32,9 +43,9 @@ export default function App() {
         <Route path="/services" element={<Services />} />
         <Route path="/booking" element={<Booking />} />
         <Route path="/shop" element={<Shop />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/admin" element={<Admin />} />
-        <Route path="/barber" element={<BarberDashboard />} />
+        <Route path="/profile" element={<RequireAuth><Profile /></RequireAuth>} />
+        <Route path="/admin" element={<RequireAuth allowedRoles={["admin", "manager"]}><Admin /></RequireAuth>} />
+        <Route path="/barber" element={<RequireAuth allowedRoles={["admin", "barber"]}><BarberDashboard /></RequireAuth>} />
         <Route path="/packages" element={<Packages />} />
         <Route path="/offers" element={<OffersPage />} />
         <Route path="/contact" element={<Contact />} />

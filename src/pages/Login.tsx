@@ -50,10 +50,10 @@ export default function Login() {
 
             <TabsContent value="login">
               <form onSubmit={(e) => { e.preventDefault(); loginMutation.mutate(loginForm); }} className="space-y-4">
-                <Input placeholder="البريد الإلكتروني" type="email" value={loginForm.email} autoFocus
+                <Input aria-label="البريد الإلكتروني" placeholder="البريد الإلكتروني" type="email" value={loginForm.email} autoFocus
                   onChange={(e) => setLoginForm({ ...loginForm, email: e.target.value })}
                   className="bg-zinc-800 border-amber-500/20 text-white placeholder:text-gray-500" />
-                <Input placeholder="كلمة المرور" type="password" value={loginForm.password}
+                <Input aria-label="كلمة المرور" placeholder="كلمة المرور" type="password" value={loginForm.password}
                   onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
                   className="bg-zinc-800 border-amber-500/20 text-white placeholder:text-gray-500" />
                 <Button type="submit" className="w-full bg-amber-500 hover:bg-amber-600 text-black font-bold" disabled={loginMutation.isPending}>
@@ -64,19 +64,19 @@ export default function Login() {
 
             <TabsContent value="register">
               <form onSubmit={(e) => { e.preventDefault(); registerMutation.mutate(registerForm); }} className="space-y-4">
-                <Input placeholder="الاسم" value={registerForm.name} autoFocus
+                <Input aria-label="الاسم" placeholder="الاسم" value={registerForm.name} autoFocus
                   onChange={(e) => setRegisterForm({ ...registerForm, name: e.target.value })}
                   className="bg-zinc-800 border-amber-500/20 text-white placeholder:text-gray-500" />
-                <Input placeholder="البريد الإلكتروني" type="email" value={registerForm.email}
+                <Input aria-label="البريد الإلكتروني" placeholder="البريد الإلكتروني" type="email" value={registerForm.email}
                   onChange={(e) => setRegisterForm({ ...registerForm, email: e.target.value })}
                   className="bg-zinc-800 border-amber-500/20 text-white placeholder:text-gray-500" />
-                <Input placeholder="رقم الهاتف (اختياري)" value={registerForm.phone}
+                <Input aria-label="رقم الهاتف (اختياري)" placeholder="رقم الهاتف (اختياري)" value={registerForm.phone}
                   onChange={(e) => setRegisterForm({ ...registerForm, phone: e.target.value })}
                   className="bg-zinc-800 border-amber-500/20 text-white placeholder:text-gray-500" />
-                <Input placeholder="كلمة المرور" type="password" value={registerForm.password}
+                <Input aria-label="كلمة المرور" placeholder="كلمة المرور" type="password" value={registerForm.password}
                   onChange={(e) => setRegisterForm({ ...registerForm, password: e.target.value })}
                   className="bg-zinc-800 border-amber-500/20 text-white placeholder:text-gray-500" />
-                <Input placeholder="تأكيد كلمة المرور" type="password" value={registerForm.confirmPassword}
+                <Input aria-label="تأكيد كلمة المرور" placeholder="تأكيد كلمة المرور" type="password" value={registerForm.confirmPassword}
                   onChange={(e) => setRegisterForm({ ...registerForm, confirmPassword: e.target.value })}
                   className="bg-zinc-800 border-amber-500/20 text-white placeholder:text-gray-500" />
                 <Button type="submit" className="w-full bg-amber-500 hover:bg-amber-600 text-black font-bold" disabled={registerMutation.isPending}>

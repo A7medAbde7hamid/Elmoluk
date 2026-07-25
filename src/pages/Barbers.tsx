@@ -113,7 +113,11 @@ export default function Barbers() {
                 <Card
                   key={barber.id}
                   className="bg-zinc-900/50 border-amber-500/20 hover:border-amber-500/50 transition-all duration-300 cursor-pointer group"
+                  tabIndex={0}
+                  role="button"
+                  aria-label={`عرض ملف ${barber.name}`}
                   onClick={() => setSelectedBarber(barber.id)}
+                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setSelectedBarber(barber.id); } }}
                 >
                   <CardContent className="p-6">
                     <div className="text-center mb-4">

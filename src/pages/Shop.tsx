@@ -8,7 +8,7 @@ import BreadcrumbSchema from "@/components/BreadcrumbSchema";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { ShoppingCart, Search, Package, Plus, Minus, MapPin, Filter } from "lucide-react";
+import { ShoppingCart, Search, Package, Plus, Minus, MapPin } from "lucide-react";
 import { toast } from "sonner";
 
 export default function Shop() {
@@ -16,8 +16,10 @@ export default function Shop() {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [cart, setCart] = useState<Record<number, number>>(() => {
-    const saved = localStorage.getItem("salon_cart");
-    return saved ? JSON.parse(saved) : {};
+    try {
+      const saved = localStorage.getItem("salon_cart");
+      return saved ? JSON.parse(saved) : {};
+    } catch { return {}; }
   });
   const saveCart = (c: Record<number, number>) => { setCart(c); localStorage.setItem("salon_cart", JSON.stringify(c)); };
   const [cartOpen, setCartOpen] = useState(false);
@@ -75,6 +77,7 @@ export default function Shop() {
             <div className="relative flex-1">
               <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
               <Input
+                aria-label="بحث عن منتج"
                 placeholder="ابحث عن منتج..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
@@ -239,6 +242,7 @@ export default function Shop() {
             <div className="relative">
               <MapPin className="absolute right-3 top-3 w-4 h-4 text-gray-500" />
               <textarea
+                aria-label="عنوان التوصيل"
                 placeholder="عنوان التوصيل (اختياري)"
                 value={shippingAddress}
                 onChange={(e) => setShippingAddress(e.target.value)}
