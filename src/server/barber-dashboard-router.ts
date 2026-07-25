@@ -1,6 +1,7 @@
 import { format } from "date-fns";
 import { z } from "zod";
 import { eq, desc, and } from "drizzle-orm";
+import { TRPCError } from "@trpc/server";
 import { createRouter, barberQuery, adminQuery } from "./middleware.js";
 import { getDb } from "./queries/connection.js";
 import { bookings, barbers, services, users } from "../../db/schema.js";
@@ -64,19 +65,21 @@ export const barberDashboardRouter = createRouter({
     }))
     .mutation(async ({ input }) => {
       const db = getDb();
+      const svc = await db.query.services.findFirst({ where: eq(services.id, input.serviceId) });
+      const serverAmount = svc ? Number(svc.price) : 0;
       const result = await db.insert(bookings).values({
         barberId: input.barberId,
         serviceId: input.serviceId,
         bookingDate: input.bookingDate,
         bookingTime: input.bookingTime,
         duration: input.duration,
-        totalAmount: input.totalAmount,
+        totalAmount: serverAmount,
         status: "completed",
         paymentStatus: input.paymentStatus,
         notes: `عميل ووك إن - ${input.customerName}${input.customerPhone ? ` (${input.customerPhone})` : ""}`,
         otpVerified: true,
       });
-      return { id: Number(result[0].insertId) };
+      return { id: Number(result[0].insertId), totalAmount: serverAmount };
     }),
 
   // List all barbers (for linking)

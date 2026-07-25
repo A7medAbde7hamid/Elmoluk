@@ -4,7 +4,7 @@ import * as cookie from "cookie";
 import { eq, and, isNull } from "drizzle-orm";
 import { Session } from "../../contracts/constants.js";
 import { getSessionCookieOptions } from "./lib/cookies.js";
-import { createRouter, publicQuery, authedQuery, adminQuery, rateLimitedPublicQuery } from "./middleware.js";
+import { createRouter, authedQuery, adminQuery, rateLimitedPublicQuery } from "./middleware.js";
 import { getDb } from "./queries/connection.js";
 import { users, barbers } from "../../db/schema.js";
 import { env } from "./lib/env.js";
@@ -30,7 +30,7 @@ export const authRouter = createRouter({
     );
     return { success: true };
   }),
-  register: publicQuery
+  register: rateLimitedPublicQuery
     .input(z.object({
       name: z.string().min(1),
       email: z.string().email(),
@@ -64,7 +64,7 @@ export const authRouter = createRouter({
   login: rateLimitedPublicQuery
     .input(z.object({
       email: z.string().email(),
-      password: z.string(),
+      password: z.string().min(1),
     }))
     .mutation(async ({ input, ctx }) => {
       const db = getDb();

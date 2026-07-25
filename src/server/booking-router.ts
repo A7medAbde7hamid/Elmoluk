@@ -15,8 +15,8 @@ export const bookingRouter = createRouter({
         dateFrom: z.string().optional(),
         dateTo: z.string().optional(),
         barberId: z.number().optional(),
-        limit: z.number().default(50),
-        offset: z.number().default(0),
+        limit: z.number().min(1).max(100).default(50),
+        offset: z.number().min(0).default(0),
       }).optional()
     )
     .query(async ({ input }) => {
@@ -101,9 +101,9 @@ export const bookingRouter = createRouter({
         barberId: z.number().optional(),
         serviceId: z.number().optional(),
         packageId: z.number().optional(),
-        bookingDate: z.string(),
-        bookingTime: z.string().optional(),
-        duration: z.number().min(5),
+        bookingDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+        bookingTime: z.string().regex(/^\d{1,2}:\d{2}$/).optional(),
+        duration: z.number().min(5).max(480),
         totalAmount: z.string(), // Deprecated: server calculates from service
         notes: z.string().optional(),
         isHomeService: z.boolean().default(false),

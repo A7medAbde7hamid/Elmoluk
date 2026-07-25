@@ -19,7 +19,7 @@ export const serviceRouter = createRouter({
       const conditions = [];
       
       if (input?.search) {
-        conditions.push(like(services.name, `%${input.search}%`));
+        conditions.push(like(services.name, `%${input.search.replace(/[%_]/g, '\\$&')}%`));
       }
       if (input?.category) {
         conditions.push(eq(services.category, input.category));

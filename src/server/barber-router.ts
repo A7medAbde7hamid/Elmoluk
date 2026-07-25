@@ -20,7 +20,8 @@ export const barberRouter = createRouter({
       const conditions = [];
       
       if (input?.search) {
-        conditions.push(like(barbers.name, `%${input.search}%`));
+        const escapedSearch = input.search.replace(/[%_]/g, '\\$&');
+        conditions.push(like(barbers.name, `%${escapedSearch}%`));
       }
       if (input?.isActive !== undefined) {
         conditions.push(eq(barbers.isActive, input.isActive));
@@ -75,8 +76,8 @@ export const barberRouter = createRouter({
       if (input.email) {
         const existing = await db.query.users.findFirst({ where: eq(users.email, input.email) });
         if (existing) throw new TRPCError({ code: "CONFLICT", message: "البريد الإلكتروني مستخدم بالفعل" });
-        const defaultPassword = process.env.BARBER_DEFAULT_PASSWORD || "barber123";
-        const hashedPassword = await bcrypt.hash(password || defaultPassword, 12);
+        if (!password) throw new TRPCError({ code: "BAD_REQUEST", message: "Password is required for new barber accounts" });
+        const hashedPassword = await bcrypt.hash(password, 12);
         const userResult = await db.insert(users).values({
           name: input.name,
           email: input.email,

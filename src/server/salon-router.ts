@@ -12,9 +12,13 @@ export const salonRouter = createRouter({
     return db.query.salonSettings.findMany();
   }),
 
-  // Get setting by key
+  // Get setting by key (allowlist to prevent enumeration of sensitive keys)
   getSetting: publicQuery
-    .input(z.object({ key: z.string() }))
+    .input(z.object({ key: z.enum([
+      "salon_name", "salon_name_en", "salon_phone", "salon_address",
+      "working_hours", "friday_off", "working_days", "currency",
+      "home_service_fee", "tax_rate", "booking_advance_days",
+    ])}))
     .query(async ({ input }) => {
       const db = getDb();
       return db.query.salonSettings.findFirst({
@@ -58,8 +62,8 @@ export const salonRouter = createRouter({
   addHoliday: adminQuery
     .input(
       z.object({
-        date: z.string(),
-        name: z.string(),
+        date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+        name: z.string().min(1).max(100),
         isRecurring: z.boolean().default(false),
       })
     )
@@ -135,8 +139,8 @@ export const salonRouter = createRouter({
   getLogs: adminQuery
     .input(
       z.object({
-        limit: z.number().default(50),
-        offset: z.number().default(0),
+        limit: z.number().min(1).max(100).default(50),
+        offset: z.number().min(0).default(0),
       }).optional()
     )
     .query(async ({ input }) => {

@@ -34,7 +34,7 @@ export const offerRouter = createRouter({
   validate: publicQuery
     .input(
       z.object({
-        code: z.string(),
+        code: z.string().min(1).max(50),
         orderAmount: z.string().optional(),
       })
     )
@@ -64,7 +64,14 @@ export const offerRouter = createRouter({
         };
       }
       
-      return { valid: true, offer };
+      return {
+        valid: true,
+        discountType: offer.discountType,
+        discountValue: offer.discountValue,
+        maxDiscount: offer.maxDiscount,
+        minOrderAmount: offer.minOrderAmount,
+        code: offer.code,
+      };
     }),
 
   // Get offer by ID

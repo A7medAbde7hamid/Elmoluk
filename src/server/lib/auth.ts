@@ -42,7 +42,7 @@ async function verifySessionToken(
     }
     return { userId: Number(userId), clientId } as SessionPayload;
   } catch (error) {
-    console.warn("[session] JWT verification failed:", error);
+    console.warn("[session] JWT verification failed:", (error as Error).message);
     return null;
   }
 }

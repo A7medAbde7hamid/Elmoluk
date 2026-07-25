@@ -31,8 +31,7 @@ export async function sendWhatsAppMessage(to: string, body: string): Promise<boo
     });
 
     if (!res.ok) {
-      const errorText = await res.text();
-      console.error("[WhatsApp] Failed to send message:", res.status, errorText);
+      console.error("[WhatsApp] Failed to send message, status:", res.status);
       return false;
     }
 

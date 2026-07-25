@@ -19,7 +19,7 @@ export const productRouter = createRouter({
       const conditions = [];
       
       if (input?.search) {
-        conditions.push(like(products.name, `%${input.search}%`));
+        conditions.push(like(products.name, `%${input.search.replace(/[%_]/g, '\\$&')}%`));
       }
       if (input?.category) {
         conditions.push(eq(products.category, input.category));
