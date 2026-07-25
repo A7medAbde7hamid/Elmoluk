@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
+import { randomUUID } from "crypto";
 import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
 import { appRouter } from "../src/server/router.js";
 import { createContext } from "../src/server/context.js";
@@ -8,7 +9,7 @@ const app = new Hono();
 
 app.use("*", async (c, next) => {
   const start = Date.now();
-  const requestId = crypto.randomUUID().slice(0, 8);
+  const requestId = randomUUID().slice(0, 8);
   c.set("requestId", requestId);
   c.header("X-Request-Id", requestId);
   await next();
