@@ -4,7 +4,7 @@ import * as cookie from "cookie";
 import { eq, and, isNull } from "drizzle-orm";
 import { Session } from "../../contracts/constants.js";
 import { getSessionCookieOptions } from "./lib/cookies.js";
-import { createRouter, publicQuery, authedQuery, adminQuery } from "./middleware.js";
+import { createRouter, publicQuery, authedQuery, adminQuery, rateLimitedPublicQuery } from "./middleware.js";
 import { getDb } from "./queries/connection.js";
 import { users, barbers } from "../../db/schema.js";
 import { env } from "./lib/env.js";
@@ -61,7 +61,7 @@ export const authRouter = createRouter({
       ctx.resHeaders.append("set-cookie", cookie.serialize(Session.cookieName, token, { ...opts, maxAge: Session.maxAgeMs / 1000 }));
       return { success: true };
     }),
-  login: publicQuery
+  login: rateLimitedPublicQuery
     .input(z.object({
       email: z.string().email(),
       password: z.string(),

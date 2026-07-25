@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { eq, desc, sql } from "drizzle-orm";
+import { TRPCError } from "@trpc/server";
 import { createRouter, adminQuery, authedQuery } from "./middleware.js";
 import { getDb } from "./queries/connection.js";
 import { orders, orderItems, products } from "../../db/schema.js";
@@ -33,16 +34,19 @@ export const orderRouter = createRouter({
     });
   }),
 
-  // Get order by ID with items
+  // Get order by ID with items (ownership check)
   byId: authedQuery
     .input(z.object({ id: z.number() }))
-    .query(async ({ input }) => {
+    .query(async ({ ctx, input }) => {
       const db = getDb();
       const order = await db.query.orders.findFirst({
         where: eq(orders.id, input.id),
       });
       
-      if (!order) throw new Error("Order not found");
+      if (!order) throw new TRPCError({ code: "NOT_FOUND", message: "Order not found" });
+      if (order.userId !== ctx.user.id && ctx.user.role !== "admin" && ctx.user.role !== "manager") {
+        throw new TRPCError({ code: "FORBIDDEN", message: "ليس لديك صلاحية" });
+      }
       
       const items = await db.query.orderItems.findMany({
         where: eq(orderItems.orderId, input.id),
@@ -60,7 +64,7 @@ export const orderRouter = createRouter({
       return { ...order, items: enrichedItems };
     }),
 
-  // Create order
+  // Create order (server-calculates prices from products table)
   create: authedQuery
     .input(
       z.object({
@@ -68,26 +72,31 @@ export const orderRouter = createRouter({
           z.object({
             productId: z.number(),
             quantity: z.number().min(1),
-            unitPrice: z.string(),
           })
         ).min(1),
         shippingAddress: z.string().optional(),
-        totalAmount: z.string(),
       })
     )
     .mutation(async ({ ctx, input }) => {
       const db = getDb();
       
-      // Check stock for all items first
+      // Fetch prices from DB + check stock — client-supplied prices are IGNORED
+      let totalAmount = 0;
+      const resolvedItems: { productId: number; quantity: number; unitPrice: number; totalPrice: number }[] = [];
+      
       for (const item of input.items) {
         const product = await db.query.products.findFirst({ where: eq(products.id, item.productId) });
-        if (!product) throw new Error(`المنتج غير موجود: ${item.productId}`);
-        if (product.stock < item.quantity) throw new Error(`المنتج "${product.name}" غير متوفر بالكمية المطلوبة (المتوفر: ${product.stock})`);
+        if (!product) throw new TRPCError({ code: "NOT_FOUND", message: `المنتج غير موجود: ${item.productId}` });
+        if (product.stock < item.quantity) throw new TRPCError({ code: "BAD_REQUEST", message: `المنتج "${product.name}" غير متوفر بالكمية المطلوبة (المتوفر: ${product.stock})` });
+        const unitPrice = Number(product.price);
+        const totalPrice = unitPrice * item.quantity;
+        totalAmount += totalPrice;
+        resolvedItems.push({ productId: item.productId, quantity: item.quantity, unitPrice, totalPrice });
       }
       
       const result = await db.insert(orders).values({
         userId: ctx.user.id,
-        totalAmount: parseFloat(input.totalAmount),
+        totalAmount,
         shippingAddress: input.shippingAddress,
         status: "pending",
         paymentStatus: "pending",
@@ -95,20 +104,18 @@ export const orderRouter = createRouter({
       
       const orderId = Number(result[0].insertId);
       
-      for (const item of input.items) {
-        const unitPrice = parseFloat(item.unitPrice);
+      for (const item of resolvedItems) {
         await db.insert(orderItems).values({
           orderId,
           productId: item.productId,
           quantity: item.quantity,
-          unitPrice,
-          totalPrice: unitPrice * item.quantity,
+          unitPrice: item.unitPrice,
+          totalPrice: item.totalPrice,
         });
-        // Decrement stock
         await db.update(products).set({ stock: sql`${products.stock} - ${item.quantity}` }).where(eq(products.id, item.productId));
       }
       
-      return { id: orderId, ...input };
+      return { id: orderId, totalAmount };
     }),
 
   // Update order status (admin)

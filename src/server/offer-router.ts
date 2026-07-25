@@ -147,8 +147,8 @@ export const offerRouter = createRouter({
       return { success: true };
     }),
 
-  // Increment usage count (called when coupon is used)
-  incrementUsage: publicQuery
+  // Increment usage count (admin only - called server-side when coupon is applied)
+  incrementUsage: adminQuery
     .input(z.object({ code: z.string() }))
     .mutation(async ({ input }) => {
       const db = getDb();

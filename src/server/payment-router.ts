@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { eq, desc, and, sql } from "drizzle-orm";
+import { TRPCError } from "@trpc/server";
 import { createRouter, adminQuery, authedQuery } from "./middleware.js";
 import { getDb } from "./queries/connection.js";
 import { payments, wallets, walletTransactions, bookings, orders } from "../../db/schema.js";
@@ -33,30 +34,50 @@ export const paymentRouter = createRouter({
     });
   }),
 
-  // Create payment
+  // Create payment (validates amount against booking/order + ownership check)
   create: authedQuery
     .input(
       z.object({
         bookingId: z.number().optional(),
         orderId: z.number().optional(),
-        amount: z.string(),
         paymentMethod: z.enum(["cash", "card", "paypal", "vodafone_cash", "apple_pay", "wallet"]),
         receiptImage: z.string().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
       const db = getDb();
-      const { receiptImage, ...rest } = input;
+      
+      // Validate ownership and calculate amount server-side
+      let amount = 0;
+      if (input.bookingId) {
+        const booking = await db.query.bookings.findFirst({ where: eq(bookings.id, input.bookingId) });
+        if (!booking) throw new TRPCError({ code: "NOT_FOUND", message: "الحجز غير موجود" });
+        if (booking.userId && booking.userId !== ctx.user.id && ctx.user.role !== "admin") {
+          throw new TRPCError({ code: "FORBIDDEN", message: "ليس لديك صلاحية" });
+        }
+        amount = Number(booking.totalAmount);
+      } else if (input.orderId) {
+        const order = await db.query.orders.findFirst({ where: eq(orders.id, input.orderId) });
+        if (!order) throw new TRPCError({ code: "NOT_FOUND", message: "الطلب غير موجود" });
+        if (order.userId !== ctx.user.id && ctx.user.role !== "admin") {
+          throw new TRPCError({ code: "FORBIDDEN", message: "ليس لديك صلاحية" });
+        }
+        amount = Number(order.totalAmount);
+      } else {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "يجب تحديد حجز أو طلب" });
+      }
       
       const result = await db.insert(payments).values({
-        ...rest,
+        bookingId: input.bookingId || null,
+        orderId: input.orderId || null,
         userId: ctx.user.id,
         status: "pending",
-        amount: parseFloat(input.amount),
-        receiptImage: receiptImage || null,
+        amount,
+        paymentMethod: input.paymentMethod,
+        receiptImage: input.receiptImage || null,
       });
       
-      return { id: Number(result[0].insertId), ...input };
+      return { id: Number(result[0].insertId), amount };
     }),
 
   // Update payment status (admin)
@@ -131,9 +152,9 @@ export const paymentRouter = createRouter({
           where: eq(wallets.id, Number(result[0].insertId)),
         });
       } else {
-        const newBalance = Number(wallet.balance) + parsedAmount;
+        // Atomic balance update
         await db.update(wallets)
-          .set({ balance: newBalance })
+          .set({ balance: sql`${wallets.balance} + ${parsedAmount}` })
           .where(eq(wallets.id, wallet.id));
       }
       
@@ -146,7 +167,9 @@ export const paymentRouter = createRouter({
         });
       }
       
-      return { success: true, balance: wallet?.balance ?? "0" };
+      // Re-fetch wallet to return correct balance
+      const updatedWallet = await db.query.wallets.findFirst({ where: eq(wallets.userId, input.userId) });
+      return { success: true, balance: updatedWallet?.balance ?? "0" };
     }),
 
   // Get payment stats

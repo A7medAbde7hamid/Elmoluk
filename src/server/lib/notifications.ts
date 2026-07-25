@@ -12,8 +12,6 @@ export async function sendWhatsAppMessage(to: string, body: string): Promise<boo
   const config = getConfig();
   if (!config) {
     console.warn("[WhatsApp] Config missing - WHATSAPP_PHONE_NUMBER_ID or WHATSAPP_ACCESS_TOKEN not set. Message not sent.");
-    console.warn("[WhatsApp] Message would have been sent to:", to);
-    console.warn("[WhatsApp] Message body:", body);
     return false;
   }
 

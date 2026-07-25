@@ -97,14 +97,14 @@ export const bookingRouter = createRouter({
   create: rateLimitedPublicQuery
     .input(
       z.object({
-        userId: z.number().optional(),
+        userId: z.number().optional(), // Deprecated: kept for backward compat, ignored in favor of ctx.user
         barberId: z.number().optional(),
         serviceId: z.number().optional(),
         packageId: z.number().optional(),
         bookingDate: z.string(),
         bookingTime: z.string().optional(),
         duration: z.number().min(5),
-        totalAmount: z.string(),
+        totalAmount: z.string(), // Deprecated: server calculates from service
         notes: z.string().optional(),
         isHomeService: z.boolean().default(false),
         homeAddress: z.string().optional(),
@@ -115,6 +115,13 @@ export const bookingRouter = createRouter({
     )
     .mutation(async ({ input }) => {
       const db = getDb();
+      
+      // Server-side price calculation: fetch service price instead of trusting client
+      let serverAmount = 0;
+      if (input.serviceId) {
+        const svc = await db.query.services.findFirst({ where: eq(services.id, input.serviceId) });
+        if (svc) serverAmount = Number(svc.price);
+      }
       
       // Auto-assign barber if not specified
       let barberId = input.barberId;
@@ -152,7 +159,7 @@ export const bookingRouter = createRouter({
       
       const [insertResult] = await getPool().execute(
         "INSERT INTO bookings (barber_id, service_id, booking_date, booking_time, queue_number, duration, status, payment_status, total_amount, notes, is_home_service) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-        [barberId, input.serviceId || null, input.bookingDate, input.bookingTime || "00:00", queueNumber, input.duration, "pending", "pending", parseFloat(input.totalAmount), notes, input.isHomeService]
+        [barberId, input.serviceId || null, input.bookingDate, input.bookingTime || "00:00", queueNumber, input.duration, "pending", "pending", serverAmount, notes, input.isHomeService]
       );
       const bookingId = Number((insertResult as any).insertId);
       
@@ -170,7 +177,7 @@ export const bookingRouter = createRouter({
         bookingDate: input.bookingDate,
         queueNumber,
         duration: input.duration,
-        totalAmount: input.totalAmount,
+        totalAmount: String(serverAmount),
         notes: input.notes,
         isHomeService: input.isHomeService,
         homeAddress: input.homeAddress,
@@ -300,46 +307,6 @@ export const bookingRouter = createRouter({
       return { success: true };
     }),
 
-  // Verify OTP (rate-limited: max 3 failed attempts, expires after 10 min)
-  verifyOtp: rateLimitedPublicQuery
-    .input(
-      z.object({
-        id: z.number(),
-        otpCode: z.string(),
-      })
-    )
-    .mutation(async ({ input }) => {
-      const db = getDb();
-      const booking = await db.query.bookings.findFirst({
-        where: eq(bookings.id, input.id),
-      });
-      
-      if (!booking) throw new TRPCError({ code: "NOT_FOUND", message: "Booking not found" });
-      if (booking.otpVerified) throw new TRPCError({ code: "BAD_REQUEST", message: "OTP already verified" });
-      if ((booking.otpAttempts ?? 0) >= 3) throw new TRPCError({ code: "BAD_REQUEST", message: "تم تجاوز الحد الأقصى لمحاولات التحقق" });
-      
-      // Check OTP expiry (10 minutes)
-      const createdAt = booking.createdAt;
-      if (createdAt) {
-        const elapsed = Date.now() - new Date(createdAt).getTime();
-        if (elapsed > 10 * 60 * 1000) {
-          throw new TRPCError({ code: "BAD_REQUEST", message: "انتهت صلاحية كود التحقق. يرجى إعادة الحجز." });
-        }
-      }
-      
-      if (booking.otpCode !== input.otpCode) {
-        await db.update(bookings)
-          .set({ otpAttempts: (booking.otpAttempts ?? 0) + 1 })
-          .where(eq(bookings.id, input.id));
-        throw new TRPCError({ code: "BAD_REQUEST", message: "رمز التحقق غير صحيح" });
-      }
-      
-      await db.update(bookings)
-        .set({ otpVerified: true, otpAttempts: 0 })
-        .where(eq(bookings.id, input.id));
-      
-      return { success: true };
-    }),
 
   // Get dashboard stats
   stats: adminQuery.query(async () => {
@@ -378,27 +345,9 @@ export const bookingRouter = createRouter({
       const [y, m, d] = input.date.split("-").map(Number);
       const dayOfWeek = new Date(Date.UTC(y, m - 1, d)).getUTCDay();
       
-      // Auto-seed barber schedules if any barber is missing them
       const allBarbers = await db.query.barbers.findMany({
         where: eq(barbers.isActive, true),
       });
-      for (const barber of allBarbers) {
-        const existing = await db.query.barberSchedules.findFirst({
-          where: eq(barberSchedules.barberId, barber.id),
-        });
-        if (!existing) {
-          for (let day = 0; day < 7; day++) {
-            if (day === 5) continue;
-            await db.insert(barberSchedules).values({
-              barberId: barber.id,
-              dayOfWeek: day,
-              startTime: "09:00",
-              endTime: "21:00",
-              isDayOff: false,
-            });
-          }
-        }
-      }
       
       if (input.barberId) {
         return getSlotsForBarber(db, input.barberId, input.date, dayOfWeek);

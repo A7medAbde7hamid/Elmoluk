@@ -13,9 +13,11 @@ export const userRouter = createRouter({
     }).optional())
     .query(async ({ input }) => {
       const db = getDb();
+      // Exclude password hash from response
       return db.query.users.findMany({
         orderBy: [desc(users.createdAt)],
         limit: input?.limit,
+        columns: { password: false },
       });
     }),
 

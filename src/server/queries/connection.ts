@@ -16,7 +16,7 @@ function createPool() {
   };
 
   if (env.databaseCa) {
-    opts.ssl = { ca: env.databaseCa };
+    opts.ssl = { ca: env.databaseCa, rejectUnauthorized: true };
   }
 
   return mysql.createPool(opts);

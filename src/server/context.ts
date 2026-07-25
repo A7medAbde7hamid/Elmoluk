@@ -14,8 +14,11 @@ export async function createContext(
   const ctx: TrpcContext = { req: opts.req, resHeaders: opts.resHeaders };
   try {
     ctx.user = await authenticateRequest(opts.req.headers);
-  } catch {
-    // Authentication is optional here
+  } catch (err) {
+    // Authentication is optional — log failures for visibility but don't block
+    if (err && typeof err === "object" && "code" in err && (err as any).code !== "UNAUTHORIZED") {
+      console.warn("[context] Unexpected auth error:", (err as any).message);
+    }
   }
   return ctx;
 }

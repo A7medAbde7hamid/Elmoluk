@@ -47,14 +47,21 @@ export const reviewRouter = createRouter({
       if (!booking) throw new Error("Booking not found");
       if (booking.userId !== ctx.user.id) throw new Error("Unauthorized");
       
+      // Use the barberId from the booking, not client-supplied
+      const barberId = booking.barberId;
+      
       const result = await db.insert(reviews).values({
-        ...input,
+        bookingId: input.bookingId,
+        barberId,
         userId: ctx.user.id,
+        rating: input.rating,
+        comment: input.comment,
+        image: input.image,
       });
       
       // Update barber rating
       const barberReviews = await db.query.reviews.findMany({
-        where: eq(reviews.barberId, input.barberId),
+        where: eq(reviews.barberId, barberId),
       });
       
       const avgRating = barberReviews.reduce((sum, r) => sum + r.rating, 0) / barberReviews.length;
@@ -64,7 +71,7 @@ export const reviewRouter = createRouter({
           rating: parseFloat(avgRating.toFixed(2)),
           totalReviews: barberReviews.length 
         })
-        .where(eq(barbers.id, input.barberId));
+        .where(eq(barbers.id, barberId));
       
       return { id: Number(result[0].insertId), ...input };
     }),

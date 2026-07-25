@@ -6,6 +6,16 @@ import { createContext } from "../src/server/context.js";
 
 const app = new Hono();
 
+// Body size limit: 5MB for API endpoints (prevents memory exhaustion)
+app.use("/api/*", async (c, next) => {
+  if (c.req.method === "GET" || c.req.method === "HEAD") return next();
+  const contentLength = Number(c.req.header("content-length") || 0);
+  if (contentLength > 5 * 1024 * 1024) {
+    return c.json({ error: "Payload Too Large" }, 413);
+  }
+  return next();
+});
+
 const allowedOrigins = ["http://localhost:5173", "http://localhost:4173", "https://elmoluk.vercel.app"];
 if (process.env.CORS_ORIGIN) allowedOrigins.push(process.env.CORS_ORIGIN);
 app.use(cors({ origin: allowedOrigins, credentials: true }));

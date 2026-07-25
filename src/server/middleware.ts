@@ -71,7 +71,7 @@ export const barberQuery = authedQuery.use(
 // Rate-limited public query (use for endpoints that don't need auth but need protection)
 export const rateLimitedPublicQuery = t.procedure.use(
   t.middleware(async (opts) => {
-    const ip = opts.ctx.req.headers.get("x-forwarded-for") || opts.ctx.req.headers.get("x-real-ip") || "unknown";
+    const ip = opts.ctx.req.headers.get("x-real-ip") || "unknown";
     if (!rateLimiter(ip)) {
       throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: "طلبات كثيرة جداً. حاول بعد دقيقة." });
     }
