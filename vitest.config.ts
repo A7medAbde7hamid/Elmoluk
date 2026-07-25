@@ -1,19 +1,27 @@
-import { defineConfig } from "vitest/config";
 import path from "path";
+import { defineConfig } from "vitest/config";
 
-const templateRoot = path.resolve(import.meta.dirname);
+const __dirname = import.meta.dirname;
 
 export default defineConfig({
-  root: templateRoot,
   resolve: {
     alias: {
-      "@": path.resolve(templateRoot, "src"),
-      "@contracts": path.resolve(templateRoot, "contracts"),
-      "@assets": path.resolve(templateRoot, "attached_assets"),
+      "@": path.resolve(__dirname, "./src"),
+      "@contracts": path.resolve(__dirname, "./contracts"),
+      "@db": path.resolve(__dirname, "./db"),
+      db: path.resolve(__dirname, "./db"),
     },
   },
   test: {
+    globals: true,
     environment: "node",
-    include: ["api/**/*.test.ts", "api/**/*.spec.ts"],
+    setupFiles: ["./src/test/setup.ts"],
+    include: ["src/test/**/*.test.ts"],
+    coverage: {
+      provider: "v8",
+      reporter: ["text", "html"],
+      include: ["src/server/**/*.ts"],
+      exclude: ["src/server/index.ts"],
+    },
   },
 });
