@@ -7,8 +7,8 @@ import BreadcrumbSchema from "@/components/BreadcrumbSchema";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Calendar } from "@/components/ui/calendar";
-import { format, startOfDay } from "date-fns";
+import { format, addDays } from "date-fns";
+import { ar } from "date-fns/locale";
 import {
   User,
   MapPin,
@@ -41,7 +41,7 @@ export default function Booking() {
   });
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(() => {
     const saved = localStorage.getItem("booking_date");
-    return saved ? new Date(saved) : undefined;
+    return saved ? new Date(saved) : new Date();
   });
   const [customerName, setCustomerName] = useState(
     () => sessionStorage.getItem("booking_name") || ""
@@ -106,6 +106,12 @@ export default function Booking() {
       },
       { enabled: !!selectedDate }
     );
+
+  const today = useMemo(() => new Date(), []);
+  const availableDates = useMemo(
+    () => Array.from({ length: 14 }, (_, i) => addDays(today, i)),
+    [today]
+  );
 
   const timeSlotGroups = useMemo(() => {
     if (!timeSlots?.length) return { morning: [], afternoon: [], evening: [] };
@@ -383,18 +389,50 @@ export default function Booking() {
 
               {/* Date Selection */}
               <div className="bg-zinc-900 rounded-2xl border border-amber-500/10 p-6">
-                <Label className="text-white mb-3 block">اختر اليوم</Label>
-                <div className="bg-zinc-800/50 p-4 rounded-xl border border-amber-500/10">
-                  <Calendar
-                    mode="single"
-                    selected={selectedDate}
-                    onSelect={d => {
-                      setSelectedDate(d);
-                      setSelectedTime(null);
-                    }}
-                    disabled={date => date < startOfDay(new Date())}
-                    className="text-white"
-                  />
+                <Label className="text-white mb-4 block">اختر اليوم</Label>
+                <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide">
+                  {availableDates.map(date => {
+                    const isSelected =
+                      selectedDate &&
+                      format(selectedDate, "yyyy-MM-dd") ===
+                        format(date, "yyyy-MM-dd");
+                    const isToday =
+                      format(date, "yyyy-MM-dd") ===
+                      format(today, "yyyy-MM-dd");
+                    const dayName = format(date, "EEEE", { locale: ar });
+                    const dayNum = format(date, "d", { locale: ar });
+                    const monthName = format(date, "MMM", { locale: ar });
+                    return (
+                      <button
+                        key={date.toISOString()}
+                        onClick={() => {
+                          setSelectedDate(date);
+                          setSelectedTime(null);
+                        }}
+                        className={`flex-shrink-0 w-20 py-3 rounded-xl text-center transition-all border-2 ${
+                          isSelected
+                            ? "border-amber-500 bg-amber-500 text-black"
+                            : "border-zinc-700 bg-zinc-800/80 text-gray-300 hover:border-amber-500/50"
+                        }`}
+                      >
+                        <p
+                          className={`text-xs font-medium ${isSelected ? "text-black/60" : "text-gray-500"}`}
+                        >
+                          {isToday ? "اليوم" : dayName}
+                        </p>
+                        <p
+                          className={`text-xl font-bold ${isSelected ? "text-black" : "text-white"}`}
+                        >
+                          {dayNum}
+                        </p>
+                        <p
+                          className={`text-xs ${isSelected ? "text-black/60" : "text-gray-500"}`}
+                        >
+                          {monthName}
+                        </p>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
