@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import { trpc } from "@/providers/trpc";
 import { Layout } from "@/components/Layout";
@@ -9,9 +9,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Calendar } from "@/components/ui/calendar";
 import { format, startOfDay } from "date-fns";
-import { User, MapPin, Check, Gift, Hash, Clock } from "lucide-react";
+import {
+  User,
+  MapPin,
+  Check,
+  Gift,
+  Clock,
+  Sunrise,
+  Sun,
+  Sunset,
+} from "lucide-react";
 import { toast } from "sonner";
-import { PaymentMethodSelector } from "@/components/PaymentMethodSelector";
 import { useAuth } from "@/hooks/useAuth";
 
 export default function Booking() {
@@ -20,12 +28,12 @@ export default function Booking() {
   const { user } = useAuth();
   const [step, setStep] = useState(() => {
     const saved = localStorage.getItem("booking_step");
-    return saved ? Number(saved) : (searchParams.get("packageId") ? 2 : 1);
+    return saved ? Number(saved) : searchParams.get("packageId") ? 2 : 1;
   });
   const [selectedService, setSelectedService] = useState<number | null>(() => {
     const saved = localStorage.getItem("booking_serviceId");
     const sid = searchParams.get("serviceId");
-    return sid ? Number(sid) : (saved ? Number(saved) : null);
+    return sid ? Number(sid) : saved ? Number(saved) : null;
   });
   const [selectedBarber, setSelectedBarber] = useState<number | null>(() => {
     const saved = localStorage.getItem("booking_barberId");
@@ -35,31 +43,50 @@ export default function Booking() {
     const saved = localStorage.getItem("booking_date");
     return saved ? new Date(saved) : undefined;
   });
-  const [customerName, setCustomerName] = useState(() => sessionStorage.getItem("booking_name") || "");
-  const [customerPhone, setCustomerPhone] = useState(() => sessionStorage.getItem("booking_phone") || "");
-  const [customerEmail, setCustomerEmail] = useState(() => sessionStorage.getItem("booking_email") || "");
-  const [notes, setNotes] = useState(() => sessionStorage.getItem("booking_notes") || "");
-  const [isHomeService, setIsHomeService] = useState(() => sessionStorage.getItem("booking_home") === "true");
-  const [homeAddress, setHomeAddress] = useState(() => sessionStorage.getItem("booking_address") || "");
-  const [paymentMethod, setPaymentMethod] = useState<"cash" | "card" | "vodafone_cash" | "wallet">(() => (localStorage.getItem("booking_payment") as any) || "cash");
-  const [receiptImage, setReceiptImage] = useState<string | null>(null);
+  const [customerName, setCustomerName] = useState(
+    () => sessionStorage.getItem("booking_name") || ""
+  );
+  const [customerPhone, setCustomerPhone] = useState(
+    () => sessionStorage.getItem("booking_phone") || ""
+  );
+  const [customerEmail, setCustomerEmail] = useState(
+    () => sessionStorage.getItem("booking_email") || ""
+  );
+  const [notes, setNotes] = useState(
+    () => sessionStorage.getItem("booking_notes") || ""
+  );
+  const isHomeService = false;
+  const homeAddress = "";
+  const [selectedTime, setSelectedTime] = useState<string | null>(
+    () => sessionStorage.getItem("booking_time") || null
+  );
   const [usePoints, setUsePoints] = useState(false);
   const [honeypot, setHoneypot] = useState(""); // Anti-bot honeypot field
 
   // Save booking form to localStorage on change
   useEffect(() => {
     localStorage.setItem("booking_step", String(step));
-    localStorage.setItem("booking_serviceId", selectedService?.toString() ?? "");
+    localStorage.setItem(
+      "booking_serviceId",
+      selectedService?.toString() ?? ""
+    );
     localStorage.setItem("booking_barberId", selectedBarber?.toString() ?? "");
     localStorage.setItem("booking_date", selectedDate?.toISOString() ?? "");
-    localStorage.setItem("booking_payment", paymentMethod);
     sessionStorage.setItem("booking_name", customerName);
     sessionStorage.setItem("booking_phone", customerPhone);
     sessionStorage.setItem("booking_email", customerEmail);
     sessionStorage.setItem("booking_notes", notes);
-    sessionStorage.setItem("booking_home", String(isHomeService));
-    sessionStorage.setItem("booking_address", homeAddress);
-  }, [step, selectedService, selectedBarber, selectedDate, customerName, customerPhone, customerEmail, notes, isHomeService, homeAddress, paymentMethod]);
+  }, [
+    step,
+    selectedService,
+    selectedBarber,
+    selectedDate,
+    customerName,
+    customerPhone,
+    customerEmail,
+    notes,
+    selectedTime,
+  ]);
 
   const { data: services } = trpc.service.list.useQuery({ isActive: true });
   const { data: barbers } = trpc.barber.list.useQuery({ isActive: true });
@@ -67,82 +94,89 @@ export default function Booking() {
     enabled: !!user,
   });
 
+  const selectedServiceData = services?.find(s => s.id === selectedService);
+  const selectedBarberData = barbers?.find(b => b.id === selectedBarber);
+
+  const { data: timeSlots, isLoading: slotsLoading } =
+    trpc.booking.getTimeSlots.useQuery(
+      {
+        barberId: selectedBarber ?? undefined,
+        date: selectedDate ? format(selectedDate, "yyyy-MM-dd") : "",
+        duration: selectedServiceData?.duration || 30,
+      },
+      { enabled: !!selectedDate }
+    );
+
+  const timeSlotGroups = useMemo(() => {
+    if (!timeSlots?.length) return { morning: [], afternoon: [], evening: [] };
+    const morning: string[] = [];
+    const afternoon: string[] = [];
+    const evening: string[] = [];
+    for (const slot of timeSlots) {
+      const hour = Number(slot.split(":")[0]);
+      if (hour < 12) morning.push(slot);
+      else if (hour < 17) afternoon.push(slot);
+      else evening.push(slot);
+    }
+    return { morning, afternoon, evening };
+  }, [timeSlots]);
+
   const createBooking = trpc.booking.create.useMutation({
-    onSuccess: (data) => {
-      toast.success(`تم حجز دورك بنجاح! رقم دورك: ${data.queueNumber}`);
-      ["step", "serviceId", "barberId", "date", "payment"].forEach(k => localStorage.removeItem(`booking_${k}`));
-      ["name", "phone", "email", "notes", "home", "address"].forEach(k => sessionStorage.removeItem(`booking_${k}`));
+    onSuccess: data => {
+      toast.success(`تم حجز موعدك بنجاح! رقم دورك: ${data.queueNumber}`);
+      ["step", "serviceId", "barberId", "date"].forEach(k =>
+        localStorage.removeItem(`booking_${k}`)
+      );
+      ["name", "phone", "email", "notes", "home", "address", "time"].forEach(
+        k => sessionStorage.removeItem(`booking_${k}`)
+      );
       if (usePoints) {
-        redeemPoints.mutate({ points: 2000, description: "استبدال 2000 نقطة للحصول على خدمة مجانية", bookingId: data.id });
+        redeemPoints.mutate({
+          points: 2000,
+          description: "استبدال 2000 نقطة للحصول على خدمة مجانية",
+          bookingId: data.id,
+        });
       }
-      createPayment.mutate({ bookingId: data.id, amount: String(finalAmount), paymentMethod, receiptImage: receiptImage || undefined });
       navigate("/profile");
     },
-    onError: (error) => {
-      toast.error(error.message);
-    },
-  });
-
-  const uploadMutation = trpc.upload.receipt.useMutation({
-    onSuccess: (data) => {
-      setReceiptImage(data.url);
-      toast.success("تم رفع الإيصال بنجاح");
-    },
-    onError: (error) => {
-      toast.error(error.message);
-    },
-  });
-
-  const createPayment = trpc.payment.create.useMutation({
-    onError: (error) => {
+    onError: error => {
       toast.error(error.message);
     },
   });
 
   const redeemPoints = trpc.loyalty.redeemPoints.useMutation({
-    onError: (error) => {
+    onError: error => {
       toast.error(error.message);
     },
   });
 
-
-  const selectedServiceData = services?.find((s) => s.id === selectedService);
-  const selectedBarberData = barbers?.find((b) => b.id === selectedBarber);
   const canUsePoints = !!user && !!loyalty && loyalty.total >= 2000;
   const finalAmount = usePoints ? 0 : Number(selectedServiceData?.price ?? 0);
-
-  const handleReceiptUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      const base64 = reader.result as string;
-      uploadMutation.mutate({ fileName: file.name, base64 });
-    };
-    reader.readAsDataURL(file);
-  };
 
   const handleSubmit = () => {
     if (!selectedService || !selectedDate) return;
     if (honeypot) return; // Bot detected
-    
-    createBooking.mutate(
-      {
-        userId: user?.id,
-        barberId: selectedBarber ?? undefined,
-        serviceId: selectedService,
-        packageId: searchParams.get("packageId") ? Number(searchParams.get("packageId")) : undefined,
-        bookingDate: format(selectedDate, "yyyy-MM-dd"),
-        duration: selectedServiceData?.duration || 30,
-        totalAmount: String(finalAmount),
-        notes: usePoints ? `${notes ? notes + "\n" : ""}[تم استخدام نقاط الولاء]` : notes,
-        isHomeService,
-        homeAddress: isHomeService ? homeAddress : undefined,
-        customerName: customerName || undefined,
-        customerPhone: customerPhone || undefined,
-        customerEmail: customerEmail || undefined,
-      }
-    );
+
+    createBooking.mutate({
+      userId: user?.id,
+      barberId: selectedBarber ?? undefined,
+      serviceId: selectedService,
+      packageId: searchParams.get("packageId")
+        ? Number(searchParams.get("packageId"))
+        : undefined,
+      bookingDate: format(selectedDate, "yyyy-MM-dd"),
+      bookingTime: selectedTime ?? undefined,
+      duration: selectedServiceData?.duration || 30,
+      totalAmount: String(finalAmount),
+      notes: usePoints
+        ? `${notes ? notes + "\n" : ""}[تم استخدام نقاط الولاء]`
+        : notes,
+      isHomeService,
+      homeAddress: isHomeService ? homeAddress : undefined,
+      customerName: customerName || undefined,
+      customerPhone: customerPhone || undefined,
+      customerEmail: customerEmail || undefined,
+    });
   };
 
   const steps = [
@@ -153,8 +187,17 @@ export default function Booking() {
 
   return (
     <Layout>
-      <SEO title="احجز موعدك" description="احجز موعدك في صالون الملوك بسهولة. اختر الخدمة والحلاق والتاريخ المناسب لك." path="/booking" />
-      <BreadcrumbSchema items={[{ name: "الرئيسية", path: "/" }, { name: "حجز موعد", path: "/booking" }]} />
+      <SEO
+        title="احجز موعدك"
+        description="احجز موعدك في صالون الملوك بسهولة. اختر الخدمة والحلاق والتاريخ المناسب لك."
+        path="/booking"
+      />
+      <BreadcrumbSchema
+        items={[
+          { name: "الرئيسية", path: "/" },
+          { name: "حجز موعد", path: "/booking" },
+        ]}
+      />
       <div className="min-h-screen bg-black pt-24 pb-20">
         <div className="max-w-4xl mx-auto px-4">
           <div className="text-center mb-10">
@@ -196,9 +239,11 @@ export default function Booking() {
           {/* Step 1: Service */}
           {step === 1 && (
             <div className="space-y-4">
-              <h2 className="text-2xl font-bold text-white mb-6">اختر الخدمة</h2>
+              <h2 className="text-2xl font-bold text-white mb-6">
+                اختر الخدمة
+              </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {services?.map((service) => (
+                {services?.map(service => (
                   <button
                     key={service.id}
                     onClick={() => setSelectedService(service.id)}
@@ -266,14 +311,16 @@ export default function Booking() {
                 >
                   <User className="w-12 h-12 text-gray-400 mx-auto mb-3" />
                   <h3 className="text-lg font-bold text-white">أي حلاق</h3>
-                  <p className="text-gray-400 text-sm">سيتم تحديد حلاق متاح تلقائياً</p>
+                  <p className="text-gray-400 text-sm">
+                    سيتم تحديد حلاق متاح تلقائياً
+                  </p>
                   {selectedBarber === null && (
                     <span className="inline-block mt-2 text-xs text-amber-400 bg-amber-500/10 px-3 py-1 rounded-full">
                       تم الاختيار
                     </span>
                   )}
                 </button>
-                {barbers?.map((barber) => (
+                {barbers?.map(barber => (
                   <button
                     key={barber.id}
                     onClick={() => setSelectedBarber(barber.id)}
@@ -327,11 +374,11 @@ export default function Booking() {
             </div>
           )}
 
-          {/* Step 3: Date + Confirmation */}
+          {/* Step 3: Date + Time + Confirmation */}
           {step === 3 && (
             <div className="space-y-6">
               <h2 className="text-2xl font-bold text-white mb-6">
-                اختر التاريخ والتأكيد
+                اختر التاريخ والوقت
               </h2>
 
               {/* Date Selection */}
@@ -341,21 +388,129 @@ export default function Booking() {
                   <Calendar
                     mode="single"
                     selected={selectedDate}
-                    onSelect={setSelectedDate}
-                    disabled={(date) => date < startOfDay(new Date())}
+                    onSelect={d => {
+                      setSelectedDate(d);
+                      setSelectedTime(null);
+                    }}
+                    disabled={date => date < startOfDay(new Date())}
                     className="text-white"
                   />
                 </div>
-                {selectedDate && (
-                  <div className="mt-4 p-4 bg-amber-500/10 rounded-xl border border-amber-500/20 text-center">
-                    <Hash className="w-8 h-8 text-amber-400 mx-auto mb-2" />
-                    <p className="text-amber-400 font-bold text-lg">حجز بالدور</p>
-                    <p className="text-gray-400 text-sm mt-1">سيتم تحديد رقم دورك بعد تأكيد الحجز</p>
-                  </div>
-                )}
               </div>
 
+              {/* Time Slot Selection */}
+              {selectedDate && (
+                <div className="bg-zinc-900 rounded-2xl border border-amber-500/10 p-6">
+                  <Label className="text-white mb-4 block">اختر الوقت</Label>
+                  {slotsLoading ? (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="w-6 h-6 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
+                      <span className="text-gray-400 mr-3">
+                        جاري تحميل الأوقات المتاحة...
+                      </span>
+                    </div>
+                  ) : !timeSlots?.length ? (
+                    <div className="text-center py-8">
+                      <Clock className="w-12 h-12 text-gray-600 mx-auto mb-3" />
+                      <p className="text-gray-400">
+                        لا توجد أوقات متاحة في هذا اليوم
+                      </p>
+                      <p className="text-gray-500 text-sm mt-1">جرّب يوم آخر</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-5">
+                      {timeSlotGroups.morning.length > 0 && (
+                        <div>
+                          <div className="flex items-center gap-2 mb-3">
+                            <Sunrise className="w-4 h-4 text-amber-400" />
+                            <span className="text-sm font-medium text-amber-400">
+                              صباحاً
+                            </span>
+                          </div>
+                          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
+                            {timeSlotGroups.morning.map(slot => (
+                              <button
+                                key={slot}
+                                onClick={() => setSelectedTime(slot)}
+                                className={`py-2.5 px-2 rounded-xl text-sm font-bold transition-all border-2 ${
+                                  selectedTime === slot
+                                    ? "border-amber-500 bg-amber-500 text-black"
+                                    : "border-zinc-700 bg-zinc-800/80 text-gray-300 hover:border-amber-500/50 hover:bg-zinc-700/80"
+                                }`}
+                              >
+                                {slot}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {timeSlotGroups.afternoon.length > 0 && (
+                        <div>
+                          <div className="flex items-center gap-2 mb-3">
+                            <Sun className="w-4 h-4 text-amber-400" />
+                            <span className="text-sm font-medium text-amber-400">
+                              ظهراً
+                            </span>
+                          </div>
+                          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
+                            {timeSlotGroups.afternoon.map(slot => (
+                              <button
+                                key={slot}
+                                onClick={() => setSelectedTime(slot)}
+                                className={`py-2.5 px-2 rounded-xl text-sm font-bold transition-all border-2 ${
+                                  selectedTime === slot
+                                    ? "border-amber-500 bg-amber-500 text-black"
+                                    : "border-zinc-700 bg-zinc-800/80 text-gray-300 hover:border-amber-500/50 hover:bg-zinc-700/80"
+                                }`}
+                              >
+                                {slot}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {timeSlotGroups.evening.length > 0 && (
+                        <div>
+                          <div className="flex items-center gap-2 mb-3">
+                            <Sunset className="w-4 h-4 text-amber-400" />
+                            <span className="text-sm font-medium text-amber-400">
+                              مساءً
+                            </span>
+                          </div>
+                          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
+                            {timeSlotGroups.evening.map(slot => (
+                              <button
+                                key={slot}
+                                onClick={() => setSelectedTime(slot)}
+                                className={`py-2.5 px-2 rounded-xl text-sm font-bold transition-all border-2 ${
+                                  selectedTime === slot
+                                    ? "border-amber-500 bg-amber-500 text-black"
+                                    : "border-zinc-700 bg-zinc-800/80 text-gray-300 hover:border-amber-500/50 hover:bg-zinc-700/80"
+                                }`}
+                              >
+                                {slot}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  {selectedTime && (
+                    <div className="mt-4 p-3 bg-amber-500/10 rounded-xl border border-amber-500/20 text-center">
+                      <p className="text-amber-400 font-bold">
+                        الوقت المختار: {selectedTime}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Summary */}
               <div className="bg-zinc-900 rounded-2xl border border-amber-500/10 p-6 space-y-4">
+                <h3 className="text-lg font-bold text-white mb-2">
+                  ملخص الحجز
+                </h3>
                 <div className="flex items-center justify-between pb-4 border-b border-zinc-800">
                   <span className="text-gray-400">الخدمة</span>
                   <span className="text-white font-bold">
@@ -376,20 +531,28 @@ export default function Booking() {
                     {selectedDate?.toLocaleDateString("ar-SA") || "—"}
                   </span>
                 </div>
-                <div className="flex items-center justify-between pb-4 border-b border-zinc-800">
-                  <span className="text-gray-400">نظام الحجز</span>
-                  <span className="text-amber-400 font-bold">بالدور</span>
-                </div>
+                {selectedTime && (
+                  <div className="flex items-center justify-between pb-4 border-b border-zinc-800">
+                    <span className="text-gray-400">الوقت</span>
+                    <span className="text-amber-400 font-bold">
+                      {selectedTime}
+                    </span>
+                  </div>
+                )}
                 <div className="flex items-center justify-between">
                   <span className="text-gray-400">السعر</span>
-                  <span className={`font-bold text-xl ${usePoints ? 'text-green-400' : 'text-amber-400'}`}>
+                  <span
+                    className={`font-bold text-xl ${usePoints ? "text-green-400" : "text-amber-400"}`}
+                  >
                     {usePoints ? 0 : selectedServiceData?.price} ج.م
                   </span>
                 </div>
                 {usePoints && (
                   <div className="flex items-center justify-between pt-2 border-t border-zinc-800">
                     <span className="text-gray-400">خصم نقاط الولاء</span>
-                    <span className="text-green-400 font-bold">-{selectedServiceData?.price} ج.م</span>
+                    <span className="text-green-400 font-bold">
+                      -{selectedServiceData?.price} ج.م
+                    </span>
                   </div>
                 )}
               </div>
@@ -400,46 +563,62 @@ export default function Booking() {
                   بيانات العميل
                 </h3>
                 <div>
-                  <Label htmlFor="booking-name" className="text-gray-300 mb-2 block">الاسم</Label>
+                  <Label
+                    htmlFor="booking-name"
+                    className="text-gray-300 mb-2 block"
+                  >
+                    الاسم
+                  </Label>
                   <Input
                     id="booking-name"
                     placeholder="اسمك الكامل"
                     value={customerName}
-                    onChange={(e) => setCustomerName(e.target.value)}
+                    onChange={e => setCustomerName(e.target.value)}
                     className="bg-black border-amber-500/20 text-white"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="booking-phone" className="text-gray-300 mb-2 block">
+                  <Label
+                    htmlFor="booking-phone"
+                    className="text-gray-300 mb-2 block"
+                  >
                     رقم الجوال
                   </Label>
                   <Input
                     id="booking-phone"
                     placeholder="05XXXXXXXX"
                     value={customerPhone}
-                    onChange={(e) => setCustomerPhone(e.target.value)}
+                    onChange={e => setCustomerPhone(e.target.value)}
                     className="bg-black border-amber-500/20 text-white"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="booking-email" className="text-gray-300 mb-2 block">
+                  <Label
+                    htmlFor="booking-email"
+                    className="text-gray-300 mb-2 block"
+                  >
                     البريد الإلكتروني
                   </Label>
                   <Input
                     id="booking-email"
                     placeholder="email@example.com"
                     value={customerEmail}
-                    onChange={(e) => setCustomerEmail(e.target.value)}
+                    onChange={e => setCustomerEmail(e.target.value)}
                     className="bg-black border-amber-500/20 text-white"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="booking-notes" className="text-gray-300 mb-2 block">ملاحظات</Label>
+                  <Label
+                    htmlFor="booking-notes"
+                    className="text-gray-300 mb-2 block"
+                  >
+                    ملاحظات
+                  </Label>
                   <Input
                     id="booking-notes"
                     placeholder="أي ملاحظات خاصة..."
                     value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
+                    onChange={e => setNotes(e.target.value)}
                     className="bg-black border-amber-500/20 text-white"
                   />
                 </div>
@@ -452,30 +631,28 @@ export default function Booking() {
                     <input
                       type="checkbox"
                       checked={usePoints}
-                      onChange={(e) => setUsePoints(e.target.checked)}
+                      onChange={e => setUsePoints(e.target.checked)}
                       className="w-5 h-5 rounded border-amber-500 text-amber-500"
                     />
                     <Gift className="w-5 h-5 text-amber-400" />
-                    <span className="text-white">استخدم 2000 نقطة للحصول على هذه الخدمة مجاناً</span>
+                    <span className="text-white">
+                      استخدم 2000 نقطة للحصول على هذه الخدمة مجاناً
+                    </span>
                   </label>
                   <div className="mt-3 text-sm text-gray-500">
-                    رصيدك الحالي: <span className="text-amber-400 font-bold">{loyalty?.total || 0} نقطة</span>
+                    رصيدك الحالي:{" "}
+                    <span className="text-amber-400 font-bold">
+                      {loyalty?.total || 0} نقطة
+                    </span>
                     {usePoints && (
                       <span className="block mt-1 text-amber-400">
-                        سيتم خصم 2000 نقطة وسيصبح رصيدك {((loyalty?.total || 0) - 2000)} نقطة
+                        سيتم خصم 2000 نقطة وسيصبح رصيدك{" "}
+                        {(loyalty?.total || 0) - 2000} نقطة
                       </span>
                     )}
                   </div>
                 </div>
               )}
-
-              <PaymentMethodSelector
-                value={paymentMethod}
-                onChange={setPaymentMethod}
-                totalAmount={Number(usePoints ? 0 : selectedServiceData?.price ?? 0)}
-                receiptImage={receiptImage}
-                onReceiptUpload={handleReceiptUpload}
-              />
 
               <div className="flex justify-between">
                 <Button
@@ -487,7 +664,9 @@ export default function Booking() {
                 </Button>
                 <Button
                   onClick={handleSubmit}
-                  disabled={createBooking.isPending || !selectedDate}
+                  disabled={
+                    createBooking.isPending || !selectedDate || !selectedTime
+                  }
                   className="bg-amber-500 hover:bg-amber-600 text-black disabled:opacity-50"
                 >
                   {createBooking.isPending ? "جاري الحجز..." : "تأكيد الحجز"}
@@ -499,8 +678,18 @@ export default function Booking() {
       </div>
 
       {/* Honeypot field (invisible to users, catches bots) */}
-      <div className="absolute opacity-0 pointer-events-none" aria-hidden="true">
-        <input type="text" name="website" value={honeypot} onChange={(e) => setHoneypot(e.target.value)} tabIndex={-1} autoComplete="off" />
+      <div
+        className="absolute opacity-0 pointer-events-none"
+        aria-hidden="true"
+      >
+        <input
+          type="text"
+          name="website"
+          value={honeypot}
+          onChange={e => setHoneypot(e.target.value)}
+          tabIndex={-1}
+          autoComplete="off"
+        />
       </div>
     </Layout>
   );
