@@ -54,7 +54,9 @@ app.use("/api/trpc/*", async c => {
   const url = new URL(c.req.url);
   const method = c.req.method;
 
-  const headers = new Headers(c.req.raw.headers as HeadersInit);
+  const headers = new Headers(
+    c.req.raw.headers as unknown as Record<string, string>
+  );
 
   const body: string | undefined =
     method === "GET" || method === "HEAD" ? undefined : await c.req.text();

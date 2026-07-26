@@ -1,6 +1,11 @@
 import { z } from "zod";
 import { eq, desc, and } from "drizzle-orm";
-import { createRouter, publicQuery, adminQuery, authedQuery } from "./middleware.js";
+import {
+  createRouter,
+  publicQuery,
+  adminQuery,
+  authedQuery,
+} from "./middleware.js";
 import { getDb } from "./queries/connection.js";
 import { reviews, barbers, bookings } from "../../db/schema.js";
 
@@ -38,24 +43,29 @@ export const reviewRouter = createRouter({
     )
     .mutation(async ({ ctx, input }) => {
       const db = getDb();
-      
+
       // Verify booking exists and belongs to user
       const booking = await db.query.bookings.findFirst({
         where: eq(bookings.id, input.bookingId),
       });
-      
+
       if (!booking) throw new Error("Booking not found");
       if (booking.userId !== ctx.user.id) throw new Error("Unauthorized");
 
       // Prevent duplicate reviews for the same booking
       const existingReview = await db.query.reviews.findFirst({
-        where: and(eq(reviews.bookingId, input.bookingId), eq(reviews.userId, ctx.user.id)),
+        where: and(
+          eq(reviews.bookingId, input.bookingId),
+          eq(reviews.userId, ctx.user.id)
+        ),
       });
-      if (existingReview) throw new Error("You have already reviewed this booking");
-      
+      if (existingReview)
+        throw new Error("You have already reviewed this booking");
+
       // Use the barberId from the booking, not client-supplied
       const barberId = booking.barberId;
-      
+      if (barberId === null) throw new Error("Booking has no assigned barber");
+
       const result = await db.insert(reviews).values({
         bookingId: input.bookingId,
         barberId,
@@ -64,21 +74,26 @@ export const reviewRouter = createRouter({
         comment: input.comment,
         image: input.image,
       });
-      
+
       // Update barber rating
       const barberReviews = await db.query.reviews.findMany({
         where: eq(reviews.barberId, barberId),
       });
-      
-      const avgRating = barberReviews.reduce((sum, r) => sum + r.rating, 0) / barberReviews.length;
-      
-      await db.update(barbers)
-        .set({ 
+
+      const avgRating =
+        barberReviews.reduce(
+          (sum: number, r: { rating: number }) => sum + r.rating,
+          0
+        ) / barberReviews.length;
+
+      await db
+        .update(barbers)
+        .set({
           rating: parseFloat(avgRating.toFixed(2)),
-          totalReviews: barberReviews.length 
+          totalReviews: barberReviews.length,
         })
         .where(eq(barbers.id, barberId));
-      
+
       return { id: Number(result[0].insertId), ...input };
     }),
 
@@ -90,30 +105,34 @@ export const reviewRouter = createRouter({
       const review = await db.query.reviews.findFirst({
         where: eq(reviews.id, input.id),
       });
-      
+
       if (!review) throw new Error("Review not found");
-      
-      await db.update(reviews)
+
+      await db
+        .update(reviews)
         .set({ isVisible: !review.isVisible })
         .where(eq(reviews.id, input.id));
-      
+
       return { success: true };
     }),
 
   // List all reviews (admin)
   list: adminQuery
     .input(
-      z.object({
-        isVisible: z.boolean().optional(),
-        limit: z.number().default(50),
-      }).optional()
+      z
+        .object({
+          isVisible: z.boolean().optional(),
+          limit: z.number().default(50),
+        })
+        .optional()
     )
     .query(async ({ input }) => {
       const db = getDb();
-      const where = input?.isVisible !== undefined 
-        ? eq(reviews.isVisible, input.isVisible) 
-        : undefined;
-      
+      const where =
+        input?.isVisible !== undefined
+          ? eq(reviews.isVisible, input.isVisible)
+          : undefined;
+
       return db.query.reviews.findMany({
         where,
         orderBy: [desc(reviews.createdAt)],

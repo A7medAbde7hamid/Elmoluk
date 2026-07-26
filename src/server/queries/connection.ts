@@ -1,6 +1,5 @@
-import { drizzle } from "drizzle-orm/mysql2";
+import { drizzle, type MySql2Database } from "drizzle-orm/mysql2";
 import mysql from "mysql2/promise";
-import { URL } from "url";
 import { env } from "../lib/env.js";
 import * as schema from "../../../db/schema.js";
 import * as relations from "../../../db/relations.js";
@@ -23,7 +22,7 @@ function createPool() {
 }
 
 let pool: mysql.Pool;
-let instance: any;
+let instance: MySql2Database<typeof fullSchema> | undefined;
 
 export function getPool() {
   if (!pool) pool = createPool();
@@ -32,7 +31,10 @@ export function getPool() {
 
 export function getDb() {
   if (!instance) {
-    instance = drizzle(getPool(), { mode: "default", schema: fullSchema });
+    instance = drizzle(getPool(), {
+      mode: "default",
+      schema: fullSchema,
+    }) as MySql2Database<typeof fullSchema>;
   }
   return instance;
 }
