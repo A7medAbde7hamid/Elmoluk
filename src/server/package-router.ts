@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, inArray } from "drizzle-orm";
 import { createRouter, publicQuery, adminQuery } from "./middleware.js";
 import { getDb } from "./queries/connection.js";
 import { packages, packageServices, services } from "../../db/schema.js";
@@ -20,23 +20,21 @@ export const packageRouter = createRouter({
         orderBy: [desc(packages.createdAt)],
       });
       
-      // Get services for each package
-      const packagesWithServices = await Promise.all(
-        result.map(async (pkg) => {
-          const pkgSvcs = await db.query.packageServices.findMany({
-            where: eq(packageServices.packageId, pkg.id),
-          });
-          const serviceIds = pkgSvcs.map((ps) => ps.serviceId);
-          const serviceDetails = await Promise.all(
-            serviceIds.map(async (sid) => {
-              return db.query.services.findFirst({
-                where: eq(services.id, sid),
-              });
-            })
-          );
-          return { ...pkg, services: serviceDetails.filter(Boolean) };
-        })
-      );
+      // Batch-fetch all package-services and services in 2 queries instead of O(P×S)
+      const pkgIds = result.map((p) => p.id);
+      const allPkgSvcs = pkgIds.length > 0
+        ? await db.query.packageServices.findMany({ where: inArray(packageServices.packageId, pkgIds) })
+        : [];
+      const allServiceIds = [...new Set(allPkgSvcs.map((ps) => ps.serviceId))];
+      const allServices = allServiceIds.length > 0
+        ? await db.query.services.findMany({ where: inArray(services.id, allServiceIds) })
+        : [];
+      const serviceMap = new Map(allServices.map((s) => [s.id, s]));
+
+      const packagesWithServices = result.map((pkg) => {
+        const serviceIds = allPkgSvcs.filter((ps) => ps.packageId === pkg.id).map((ps) => ps.serviceId);
+        return { ...pkg, services: serviceIds.map((sid) => serviceMap.get(sid)).filter(Boolean) };
+      });
       
       return packagesWithServices;
     }),
@@ -56,15 +54,12 @@ export const packageRouter = createRouter({
         where: eq(packageServices.packageId, input.id),
       });
       
-      const serviceDetails = await Promise.all(
-        pkgSvcs.map(async (ps) => {
-          return db.query.services.findFirst({
-            where: eq(services.id, ps.serviceId),
-          });
-        })
-      );
+      const serviceIds = pkgSvcs.map((ps) => ps.serviceId);
+      const serviceDetails = serviceIds.length > 0
+        ? await db.query.services.findMany({ where: inArray(services.id, serviceIds) })
+        : [];
       
-      return { ...pkg, services: serviceDetails.filter(Boolean) };
+      return { ...pkg, services: serviceDetails };
     }),
 
   // Create package (admin only)

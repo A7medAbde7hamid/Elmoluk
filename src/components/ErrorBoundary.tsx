@@ -31,7 +31,7 @@ export class ErrorBoundary extends Component<Props, State> {
               تحديث الصفحة
             </button>
             <p className="text-gray-600 text-xs mt-4">
-              {this.state.error?.message}
+              {import.meta.env.DEV ? this.state.error?.message : ""}
             </p>
           </div>
         </div>

@@ -46,6 +46,12 @@ export const reviewRouter = createRouter({
       
       if (!booking) throw new Error("Booking not found");
       if (booking.userId !== ctx.user.id) throw new Error("Unauthorized");
+
+      // Prevent duplicate reviews for the same booking
+      const existingReview = await db.query.reviews.findFirst({
+        where: and(eq(reviews.bookingId, input.bookingId), eq(reviews.userId, ctx.user.id)),
+      });
+      if (existingReview) throw new Error("You have already reviewed this booking");
       
       // Use the barberId from the booking, not client-supplied
       const barberId = booking.barberId;

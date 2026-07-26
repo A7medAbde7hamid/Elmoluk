@@ -179,7 +179,7 @@ export const bookingRouter = createRouter({
         homeAddress: input.homeAddress,
         customerName: input.customerName,
         customerPhone: input.customerPhone,
-        status: "confirmed" as const,
+        status: "pending" as const,
       };
     }),
 

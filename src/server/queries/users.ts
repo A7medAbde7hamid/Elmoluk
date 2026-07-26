@@ -13,7 +13,7 @@ export async function findUserByEmail(email: string) {
 
 export async function findUserById(id: number) {
   const rows = await getDb()
-    .select()
+    .select({ id: schema.users.id, unionId: schema.users.unionId, name: schema.users.name, phone: schema.users.phone, email: schema.users.email, avatar: schema.users.avatar, role: schema.users.role, createdAt: schema.users.createdAt, updatedAt: schema.users.updatedAt, lastSignInAt: schema.users.lastSignInAt })
     .from(schema.users)
     .where(eq(schema.users.id, id))
     .limit(1);

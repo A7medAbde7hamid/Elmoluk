@@ -154,11 +154,14 @@ export const offerRouter = createRouter({
       return { success: true };
     }),
 
-  // Increment usage count (admin only - called server-side when coupon is applied)
+  // Validate and atomically increment usage count (admin only)
   incrementUsage: adminQuery
     .input(z.object({ code: z.string() }))
     .mutation(async ({ input }) => {
       const db = getDb();
+      const offer = await db.query.offers.findFirst({ where: eq(offers.code, input.code) });
+      if (!offer) throw new Error("Offer not found");
+      if (offer.usageLimit && offer.usageCount >= offer.usageLimit) throw new Error("Usage limit reached");
       await db.update(offers).set({ usageCount: sql`${offers.usageCount} + 1` }).where(eq(offers.code, input.code));
       return { success: true };
     }),

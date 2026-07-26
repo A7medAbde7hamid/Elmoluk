@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { eq, desc, sql } from "drizzle-orm";
+import { eq, desc, sql, inArray } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { createRouter, adminQuery, authedQuery } from "./middleware.js";
 import { getDb } from "./queries/connection.js";
@@ -52,15 +52,16 @@ export const orderRouter = createRouter({
         where: eq(orderItems.orderId, input.id),
       });
       
-      const enrichedItems = await Promise.all(
-        items.map(async (item) => {
-          const product = await db.query.products.findFirst({
-            where: eq(products.id, item.productId),
-          });
-          return { ...item, product };
-        })
-      );
-      
+      const productIds = [...new Set(items.map((item) => item.productId))];
+      const productList = productIds.length > 0
+        ? await db.query.products.findMany({ where: inArray(products.id, productIds) })
+        : [];
+      const productMap = new Map(productList.map((p) => [p.id, p]));
+      const enrichedItems = items.map((item) => ({
+        ...item,
+        product: productMap.get(item.productId) ?? null,
+      }));
+
       return { ...order, items: enrichedItems };
     }),
 
@@ -79,43 +80,47 @@ export const orderRouter = createRouter({
     )
     .mutation(async ({ ctx, input }) => {
       const db = getDb();
-      
-      // Fetch prices from DB + check stock — client-supplied prices are IGNORED
-      let totalAmount = 0;
-      const resolvedItems: { productId: number; quantity: number; unitPrice: number; totalPrice: number }[] = [];
-      
-      for (const item of input.items) {
-        const product = await db.query.products.findFirst({ where: eq(products.id, item.productId) });
-        if (!product) throw new TRPCError({ code: "NOT_FOUND", message: `المنتج غير موجود: ${item.productId}` });
-        if (product.stock < item.quantity) throw new TRPCError({ code: "BAD_REQUEST", message: `المنتج "${product.name}" غير متوفر بالكمية المطلوبة (المتوفر: ${product.stock})` });
-        const unitPrice = Number(product.price);
-        const totalPrice = unitPrice * item.quantity;
-        totalAmount += totalPrice;
-        resolvedItems.push({ productId: item.productId, quantity: item.quantity, unitPrice, totalPrice });
-      }
-      
-      const result = await db.insert(orders).values({
-        userId: ctx.user.id,
-        totalAmount,
-        shippingAddress: input.shippingAddress,
-        status: "pending",
-        paymentStatus: "pending",
-      });
-      
-      const orderId = Number(result[0].insertId);
-      
-      for (const item of resolvedItems) {
-        await db.insert(orderItems).values({
-          orderId,
-          productId: item.productId,
-          quantity: item.quantity,
-          unitPrice: item.unitPrice,
-          totalPrice: item.totalPrice,
+
+      const result = await db.transaction(async (tx) => {
+        // Fetch prices from DB + check stock inside transaction — client-supplied prices are IGNORED
+        let totalAmount = 0;
+        const resolvedItems: { productId: number; quantity: number; unitPrice: number; totalPrice: number }[] = [];
+
+        for (const item of input.items) {
+          const product = await tx.query.products.findFirst({ where: eq(products.id, item.productId) });
+          if (!product) throw new TRPCError({ code: "NOT_FOUND", message: `المنتج غير موجود: ${item.productId}` });
+          if (product.stock < item.quantity) throw new TRPCError({ code: "BAD_REQUEST", message: `المنتج "${product.name}" غير متوفر بالكمية المطلوبة (المتوفر: ${product.stock})` });
+          const unitPrice = Number(product.price);
+          const totalPrice = unitPrice * item.quantity;
+          totalAmount += totalPrice;
+          resolvedItems.push({ productId: item.productId, quantity: item.quantity, unitPrice, totalPrice });
+        }
+
+        const orderResult = await tx.insert(orders).values({
+          userId: ctx.user.id,
+          totalAmount,
+          shippingAddress: input.shippingAddress,
+          status: "pending",
+          paymentStatus: "pending",
         });
-        await db.update(products).set({ stock: sql`${products.stock} - ${item.quantity}` }).where(eq(products.id, item.productId));
-      }
-      
-      return { id: orderId, totalAmount };
+
+        const orderId = Number(orderResult[0].insertId);
+
+        for (const item of resolvedItems) {
+          await tx.insert(orderItems).values({
+            orderId,
+            productId: item.productId,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+            totalPrice: item.totalPrice,
+          });
+          await tx.update(products).set({ stock: sql`${products.stock} - ${item.quantity}` }).where(eq(products.id, item.productId));
+        }
+
+        return { orderId, totalAmount };
+      });
+
+      return { id: result.orderId, totalAmount: result.totalAmount };
     }),
 
   // Update order status (admin)

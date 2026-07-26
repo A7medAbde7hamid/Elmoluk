@@ -185,18 +185,6 @@ export default function Admin() {
     no_show: "لم يحضر",
   };
 
-  const revenueChartConfig = {
-    revenue: { label: "الإيرادات", color: "#f59e0b" },
-  };
-
-  const bookingChartConfig = {
-    pending: { label: "معلق", color: "#eab308" },
-    confirmed: { label: "مؤكد", color: "#3b82f6" },
-    completed: { label: "مكتمل", color: "#22c55e" },
-    cancelled: { label: "ملغي", color: "#ef4444" },
-    no_show: { label: "لم يحضر", color: "#6b7280" },
-  };
-
   return (
     <Layout>
       <div className="min-h-screen bg-black pt-24 pb-20">

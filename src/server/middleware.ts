@@ -8,6 +8,14 @@ const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 const RATE_LIMIT_WINDOW = 60_000; // 1 minute
 const RATE_LIMIT_MAX = 30; // max requests per window per IP
 
+// Periodic cleanup every 5 minutes to prevent memory leak
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, entry] of rateLimitMap) {
+    if (now > entry.resetAt) rateLimitMap.delete(ip);
+  }
+}, 300_000).unref();
+
 function rateLimiter(ip: string) {
   const now = Date.now();
   const entry = rateLimitMap.get(ip);
@@ -71,7 +79,7 @@ export const barberQuery = authedQuery.use(
 // Rate-limited public query (use for endpoints that don't need auth but need protection)
 export const rateLimitedPublicQuery = t.procedure.use(
   t.middleware(async (opts) => {
-    const ip = opts.ctx.req.headers.get("x-real-ip") || "unknown";
+    const ip = opts.ctx.req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || opts.ctx.req.headers.get("x-real-ip") || "unknown";
     if (!rateLimiter(ip)) {
       throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: "طلبات كثيرة جداً. حاول بعد دقيقة." });
     }

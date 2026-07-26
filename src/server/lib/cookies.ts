@@ -12,7 +12,7 @@ export function getSessionCookieOptions(headers: Headers) {
   return {
     httpOnly: true,
     path: "/",
-    sameSite: (localhost ? "lax" : "none") as "lax" | "none",
+    sameSite: "lax" as const,
     secure: !localhost,
   };
 }

@@ -37,7 +37,7 @@ export async function sendWhatsAppMessage(to: string, body: string): Promise<boo
 
     return true;
   } catch (error) {
-    console.error("[WhatsApp] Error sending message:", error);
+    console.error("[WhatsApp] Error sending message:", error instanceof Error ? error.message : "unknown error");
     return false;
   }
 }

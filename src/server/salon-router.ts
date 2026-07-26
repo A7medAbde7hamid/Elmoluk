@@ -30,7 +30,11 @@ export const salonRouter = createRouter({
   setSetting: adminQuery
     .input(
       z.object({
-        key: z.string(),
+        key: z.enum([
+          "salon_name", "salon_name_en", "salon_phone", "salon_address",
+          "working_hours", "friday_off", "working_days", "currency",
+          "home_service_fee", "tax_rate", "booking_advance_days",
+        ]),
         value: z.string(),
       })
     )

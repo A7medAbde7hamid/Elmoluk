@@ -12,7 +12,7 @@ describe("cookies.ts", () => {
       const opts = getSessionCookieOptions(headers);
 
       expect(opts.secure).toBe(true);
-      expect(opts.sameSite).toBe("none");
+      expect(opts.sameSite).toBe("lax");
       expect(opts.httpOnly).toBe(true);
       expect(opts.path).toBe("/");
 
@@ -43,7 +43,7 @@ describe("cookies.ts", () => {
       const opts = getSessionCookieOptions(headers);
 
       expect(opts.secure).toBe(true);
-      expect(opts.sameSite).toBe("none");
+      expect(opts.sameSite).toBe("lax");
 
       process.env.VERCEL = original;
     });
