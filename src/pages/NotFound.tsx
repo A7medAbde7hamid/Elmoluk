@@ -6,7 +6,7 @@ import { Layout } from "@/components/Layout";
 export default function NotFound() {
   return (
     <Layout>
-      <SEO title="الصفحة غير موجودة" description="عذراً، الصفحة التي تبحث عنها غير موجودة." path="/404" />
+      <SEO title="الصفحة غير موجودة" description="عذراً، الصفحة التي تبحث عنها غير موجودة." path="/404" robots="noindex, nofollow" />
       <div className="min-h-screen bg-black pt-24 pb-20 flex items-center justify-center">
         <div className="text-center max-w-md px-4">
           <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-amber-500/10 flex items-center justify-center">

@@ -6,14 +6,15 @@ interface SEOProps {
   path?: string;
   ogImage?: string;
   keywords?: string;
+  robots?: string;
 }
 
 const BASE_URL = "https://elmoluk.vercel.app";
-const SITE_NAME = "صالون الملوك | El Moluok Salon";
+const SITE_NAME = "صالون الملوك";
 const DEFAULT_OG_IMAGE = `${BASE_URL}/og-image.svg`;
-const DEFAULT_KEYWORDS = "صالون حلاقة, حلاق, العاشر من رمضان, حلاقة رجالي, عناية بالرجال, صالون الملوك, El Moluok, حلاقين, تهذيب لحية, عناية بالبشرة, منتجات شعر, باقات حلاقة";
+const DEFAULT_KEYWORDS = "صالون الملوك, صالون حلاقة, حلاق رجالي, العاشر من رمضان, حلاقة شعر, تهذيب لحية, عناية بالبشرة, حجز موعد حلاقة, افضل حلاق, صبغ شعر, منتجات شعر, باقات حلاقة";
 
-export default function SEO({ title, description, path = "", ogImage, keywords }: SEOProps) {
+export default function SEO({ title, description, path = "", ogImage, keywords, robots }: SEOProps) {
   const url = `${BASE_URL}${path}`;
   const fullTitle = `${title} | ${SITE_NAME}`;
   const image = ogImage || DEFAULT_OG_IMAGE;
@@ -23,6 +24,7 @@ export default function SEO({ title, description, path = "", ogImage, keywords }
       <title>{fullTitle}</title>
       <meta name="description" content={description} />
       <meta name="keywords" content={keywords || DEFAULT_KEYWORDS} />
+      {robots && <meta name="robots" content={robots} />}
       <link rel="canonical" href={url} />
 
       <meta property="og:title" content={fullTitle} />

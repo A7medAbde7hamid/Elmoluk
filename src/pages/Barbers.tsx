@@ -19,7 +19,7 @@ export default function Barbers() {
 
   return (
     <Layout>
-      <SEO title="فريق الحلاقين" description="تعرف على حلاقي صالون الملوك - فريق من المحترفين بخبرة أكثر من 10 سنوات في الحلاقة والعناية." path="/barbers" />
+      <SEO title="فريق حلاقين محترفين" description="تعرّف على فريق حلاقين صالون الملوك - محترفون بخبرة أكثر من 10 سنوات في الحلاقة والعناية بالرجال في العاشر من رمضان." path="/barbers" keywords="حلاقين صالون الملوك, فريق حلاقة, حلاق محترف, حلاقة رجالية" />
       <BreadcrumbSchema items={[{ name: "الرئيسية", path: "/" }, { name: "الحلاقين", path: "/barbers" }]} />
       <div className="min-h-screen bg-black text-white py-20">
         <div className="max-w-6xl mx-auto px-4">

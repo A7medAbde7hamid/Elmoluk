@@ -64,7 +64,7 @@ export default function Shop() {
 
   return (
     <Layout>
-      <SEO title="منتجات العناية" description="تسوق منتجات العناية بالشعر والبشرة من صالون الملوك. شامبو، زيوت، كريمات ومشط خشبي." path="/shop" />
+      <SEO title="متجر منتجات العناية بالشعر والبشرة" description="تسوق منتجات العناية من صالون الملوك: شامبو، زيوت، كريمات، مستحضرات شعر وبشرة. توصيل في العاشر من رمضان والشرقية." path="/shop" keywords="منتجات شعر, شامبو, زيوت عناية, كريمات وجه, متجر صالون الملوك, منتجات حلاقة" />
       <BreadcrumbSchema items={[{ name: "الرئيسية", path: "/" }, { name: "المتجر", path: "/shop" }]} />
       <div className="min-h-screen bg-black pt-24 pb-20">
         <div className="max-w-7xl mx-auto px-4">

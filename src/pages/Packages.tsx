@@ -12,7 +12,7 @@ export default function Packages() {
 
   return (
     <Layout>
-      <SEO title="الباقات والعروض" description="باقات صالون الملوك الملكية - وفر مع باقاتنا المميزة للحلاقة والعناية الكاملة." path="/packages" />
+      <SEO title="باقات حلاقة مميزة بأسعار اقتصادية" description="باقات صالون الملوك: باقات حلاقة شاملة بأسعار اقتصادية. وفر أكثر مع باقاتنا للحلاقة والعناية الكاملة في العاشر من رمضان." path="/packages" keywords="باقات حلاقة, عروض صالون, حلاقة شاملة, باقات مميزة, صالون الملوك باقات" />
       <BreadcrumbSchema items={[{ name: "الرئيسية", path: "/" }, { name: "الباقات", path: "/packages" }]} />
       <div className="min-h-screen bg-black pt-24 pb-20">
         <div className="max-w-5xl mx-auto px-4">

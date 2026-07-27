@@ -194,9 +194,10 @@ export default function Booking() {
   return (
     <Layout>
       <SEO
-        title="احجز موعدك"
-        description="احجز موعدك في صالون الملوك بسهولة. اختر الخدمة والحلاق والتاريخ المناسب لك."
+        title="احجز موعد حلاقة في صالون الملوك"
+        description="احجز موعدك في صالون الملوك بسهولة. اختر الخدمة والحلاق والوقت المناسب. حجز أونلاين في العاشر من رمضان."
         path="/booking"
+        keywords="حجز صالون حلاقة, حجز موعد حلاق, صالون الملوك حجز, حجز أونلاين حلاقة"
       />
       <BreadcrumbSchema
         items={[
@@ -204,6 +205,18 @@ export default function Booking() {
           { name: "حجز موعد", path: "/booking" },
         ]}
       />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "HowTo",
+        "name": "كيف تحجز موعد في صالون الملوك",
+        "description": "خطوات بسيطة لحجز موعدك في صالون الملوك",
+        "step": [
+          { "@type": "HowToStep", "name": "اختر الخدمة", "text": "اختر الخدمة التي تناسبك من قائمة خدمات الحلاقة والعناية." },
+          { "@type": "HowToStep", "name": "اختر الحلاق", "text": "اختر الحلاق المفضل أو دع النظام يختار لك حلاق متاح." },
+          { "@type": "HowToStep", "name": "اختر التاريخ والوقت", "text": "اختر اليوم والوقت المناسب من الأوقات المتاحة." },
+          { "@type": "HowToStep", "name": "أكّد الحجز", "text": "أدخل بياناتك وأكّد الحجز لتصلك رسالة واتساب تأكيد." }
+        ]
+      }) }} />
       <div className="min-h-screen bg-black pt-24 pb-20">
         <div className="max-w-4xl mx-auto px-4">
           <div className="text-center mb-10">

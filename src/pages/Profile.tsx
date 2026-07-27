@@ -59,7 +59,7 @@ export default function Profile() {
 
   return (
     <Layout>
-      <SEO title="الملف الشخصي" description="الملف الشخصي - حجوزاتي، نقاط الولاء، والإشعارات." path="/profile" />
+      <SEO title="الملف الشخصي" description="الملف الشخصي - حجوزاتي، نقاط الولاء، والإشعارات." path="/profile" robots="noindex, nofollow" />
       <div className="min-h-screen bg-black pt-24 pb-20">
         <div className="max-w-6xl mx-auto px-4">
           {/* Profile Header */}

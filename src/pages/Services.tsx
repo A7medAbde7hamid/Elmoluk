@@ -31,7 +31,7 @@ export default function Services() {
 
   return (
     <Layout>
-      <SEO title="خدمات الحلاقة والعناية" description="تعرف على خدمات صالون الملوك: حلاقة كاملة، تهذيب لحية، عناية بالبشرة، بخار، صبغ شعر، خدمة منزلية. احجز موعدك الآن." path="/services" />
+      <SEO title="خدمات الحلاقة والعناية بالرجال" description="خدمات صالون الملوك: حلاقة كاملة، تهذيب لحية، عناية بالبشرة، بخار، صبغ شعر، خدمة منزلية. أسعار ومواعيد في العاشر من رمضان." path="/services" keywords="خدمات حلاقة, حلاقة رجالية, تهذيب لحية, عناية بالبشرة, صبغ شعر, صالون الملوك" />
       <BreadcrumbSchema items={[{ name: "الرئيسية", path: "/" }, { name: "الخدمات", path: "/services" }]} />
       <div className="min-h-screen bg-black pt-24 pb-20">
         <div className="max-w-7xl mx-auto px-4">

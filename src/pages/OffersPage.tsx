@@ -10,7 +10,7 @@ export default function OffersPage() {
 
   return (
     <Layout>
-      <SEO title="العروض والكوبونات" description="عروض وخصومات صالون الملوك - كوبونات خصم وعروض حصرية على خدمات ومنتجات الحلاقة." path="/offers" />
+      <SEO title="عروض وخصومات على الحلاقة والعناية" description="عروض صالون الملوك الحصرية: خصومات على خدمات الحلاقة والمنتجات. كوبونات خصم محدودة في العاشر من رمضان." path="/offers" keywords="عروض صالون, خصومات حلاقة, كوبون خصم, عروض محدودة" />
       <BreadcrumbSchema items={[{ name: "الرئيسية", path: "/" }, { name: "العروض", path: "/offers" }]} />
       <div className="min-h-screen bg-black pt-24 pb-20">
         <div className="max-w-4xl mx-auto px-4">

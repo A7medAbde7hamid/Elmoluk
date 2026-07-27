@@ -33,8 +33,21 @@ export default function Contact() {
 
   return (
     <Layout>
-      <SEO title="اتصل بنا" description="تواصل مع صالون الملوك في العاشر من رمضان. عنوان: الحي العاشر 110. تليفون: +20 1097314558." path="/contact" />
+      <SEO title="تواصل معنا - عنوان وتليفون" description="تواصل مع صالون الملوك: الحي العاشر 110، العاشر من رمضان، الشرقية. تليفون: 01097314558. ساعات العمل: 10 صباحاً - 10 مساءً." path="/contact" keywords="صالون الملوك تليفون, عنوان صالون, العاشر من رمضان صالون, التواصل" />
       <BreadcrumbSchema items={[{ name: "الرئيسية", path: "/" }, { name: "اتصل بنا", path: "/contact" }]} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "ContactPage",
+        "name": "تواصل مع صالون الملوك",
+        "url": "https://elmoluk.vercel.app/contact",
+        "mainEntity": {
+          "@type": "LocalBusiness",
+          "name": "صالون الملوك",
+          "telephone": "+201097314558",
+          "address": { "@type": "PostalAddress", "streetAddress": "الحي العاشر 110", "addressLocality": "العاشر من رمضان", "addressRegion": "الشرقية", "addressCountry": "EG" },
+          "openingHours": ["Sat-Thu 10:00-22:00", "Fri 16:00-20:00"]
+        }
+      }) }} />
       <div className="min-h-screen bg-black text-white py-20">
         <div className="max-w-6xl mx-auto px-4">
           <div className="text-center mb-12">
